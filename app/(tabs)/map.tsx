@@ -1,125 +1,334 @@
-import { campusLocations } from '@/data/schedule';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Dimensions,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import MapView, { Callout, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-type LocationType = 'all' | 'building' | 'library' | 'bus';
+type LocationType = 'all' | 'building' | 'parking' | 'cafeteria' | 'mosque' | 'bus' | 'other';
 
-const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
-  building: { icon: 'business', color: '#667eea', label: 'Binalar' },
-  library: { icon: 'library', color: '#4ECDC4', label: 'Kütüphane' },
-  bus: { icon: 'bus', color: '#BB8FCE', label: 'Otobüs' },
-  other: { icon: 'location', color: '#94a3b8', label: 'Diğer' },
+interface CampusLocation {
+  id: string;
+  name: string;
+  type: LocationType;
+  latitude: number;
+  longitude: number;
+  description?: string;
+}
+
+const typeConfig: Record<string, { icon: string; color: string; label: string; markerColor: string }> = {
+  building: { icon: 'business', color: '#667eea', label: 'Binalar', markerColor: '#667eea' },
+  parking: { icon: 'car', color: '#F59E0B', label: 'Otopark', markerColor: '#F59E0B' },
+  cafeteria: { icon: 'cafe', color: '#10B981', label: 'Kafeterya', markerColor: '#10B981' },
+  mosque: { icon: 'moon', color: '#8B5CF6', label: 'Cami', markerColor: '#8B5CF6' },
+  bus: { icon: 'bus', color: '#EC4899', label: 'Otobüs', markerColor: '#EC4899' },
+  library: { icon: 'library', color: '#4ECDC4', label: 'Kütüphane', markerColor: '#4ECDC4' },
+  sports: { icon: 'football', color: '#EF4444', label: 'Spor', markerColor: '#EF4444' },
+  security: { icon: 'shield-checkmark', color: '#6366F1', label: 'Güvenlik', markerColor: '#6366F1' },
+  service: { icon: 'bicycle', color: '#14B8A6', label: 'Hizmet', markerColor: '#14B8A6' },
+  other: { icon: 'location', color: '#94a3b8', label: 'Diğer', markerColor: '#94a3b8' },
 };
 
-// Otobüs durakları ve saatleri
-const busStops = [
+// Kampüs konumları
+const campusLocations: CampusLocation[] = [
   {
-    id: 'bus1',
-    name: 'Kampüs Otobüs Durağı',
+    id: 'rektorluk',
+    name: 'Rektörlük',
+    type: 'building',
+    latitude: 40.570986265947425,
+    longitude: 34.98100311246755,
+    description: 'Üniversite Rektörlük Binası',
+  },
+  {
+    id: 'muhendislik',
+    name: 'Mühendislik Fakültesi',
+    type: 'building',
+    latitude: 40.57038118392237,
+    longitude: 34.98223970086682,
+    description: 'Mühendislik Fakültesi Ana Binası',
+  },
+  {
+    id: 'muhendislik-kafeterya',
+    name: 'Mühendislik Fakültesi Kafeterya',
+    type: 'cafeteria',
+    latitude: 40.5705674740146,
+    longitude: 34.98160595985285,
+    description: 'Mühendislik Fakültesi Kafeteryası',
+  },
+  {
+    id: 'kutuphane',
+    name: 'Kütüphane',
+    type: 'library',
+    latitude: 40.57220041170529,
+    longitude: 34.985223457019224,
+    description: 'Merkez Kütüphane',
+  },
+  {
+    id: 'ilahiyat',
+    name: 'İlahiyat Fakültesi',
+    type: 'building',
+    latitude: 40.57326824038024,
+    longitude: 34.98456114931035,
+    description: 'İlahiyat Fakültesi Binası',
+  },
+  {
+    id: 'spor-bilimleri',
+    name: 'Spor Bilimleri Fakültesi',
+    type: 'sports',
+    latitude: 40.568905913376675,
+    longitude: 34.98166313188985,
+    description: 'Spor Bilimleri Fakültesi',
+  },
+  {
+    id: 'hubtuam',
+    name: 'HÜBTÜAM',
+    type: 'building',
+    latitude: 40.56841607026478,
+    longitude: 34.97893201640681,
+    description: 'HÜBTÜAM Binası',
+  },
+  {
+    id: 'besyo-acik-saha',
+    name: 'BESYO Açık Saha',
+    type: 'sports',
+    latitude: 40.568557104929646,
+    longitude: 34.98024413687926,
+    description: 'Beden Eğitimi ve Spor Yüksekokulu Açık Saha',
+  },
+  {
+    id: 'otopark-1',
+    name: 'Otopark',
+    type: 'parking',
+    latitude: 40.57125980762864,
+    longitude: 34.98099340317669,
+    description: 'Açık Otopark Alanı',
+  },
+  {
+    id: 'otopark-2',
+    name: 'Otopark',
+    type: 'parking',
+    latitude: 40.56965939110718,
+    longitude: 34.980561468585854,
+    description: 'Açık Otopark Alanı',
+  },
+  {
+    id: 'otopark-3',
+    name: 'Otopark',
+    type: 'parking',
+    latitude: 40.572027400895124,
+    longitude: 34.98432350261007,
+    description: 'Açık Otopark Alanı',
+  },
+  {
+    id: 'otopark-4',
+    name: 'Otopark',
+    type: 'parking',
+    latitude: 40.568188177258804,
+    longitude: 34.97865243475386,
+    description: 'Açık Otopark Alanı',
+  },
+  {
+    id: 'otopark-5',
+    name: 'Otopark',
+    type: 'parking',
+    latitude: 40.57017004831113,
+    longitude: 34.98207571824509,
+    description: 'Açık Otopark Alanı',
+  },
+  {
+    id: 'cami',
+    name: 'Cami',
+    type: 'mosque',
+    latitude: 40.571054967940185,
+    longitude: 34.98380395541308,
+    description: 'Kampüs Camii',
+  },
+  {
+    id: 'guvenlik',
+    name: 'Güvenlik',
+    type: 'security',
+    latitude: 40.56942621554099,
+    longitude: 34.984260191061125,
+    description: 'Kampüs Güvenlik Birimi',
+  },
+  {
+    id: 'corbis',
+    name: 'Çorbis (Bisiklet Kiralama)',
+    type: 'service',
+    latitude: 40.57157929968973,
+    longitude: 34.98446307513721,
+    description: 'Bisiklet Kiralama Noktası',
+  },
+  {
+    id: 'otobus-duragi',
+    name: 'Otobüs Durağı',
     type: 'bus',
-    description: 'Ana giriş yanı otobüs durağı',
-    buses: [
-      {
-        line: '11-A',
-        route: 'Kampüs - Şehir Merkezi',
-        color: '#FF6B6B',
-        schedule: [
-          { time: '07:30', note: 'İlk sefer' },
-          { time: '08:00', note: '' },
-          { time: '08:30', note: 'Yoğun' },
-          { time: '09:00', note: '' },
-          { time: '09:30', note: '' },
-          { time: '10:00', note: '' },
-          { time: '10:30', note: '' },
-          { time: '11:00', note: '' },
-          { time: '11:30', note: '' },
-          { time: '12:00', note: 'Öğle' },
-          { time: '12:30', note: '' },
-          { time: '13:00', note: '' },
-          { time: '13:30', note: '' },
-          { time: '14:00', note: '' },
-          { time: '15:00', note: '' },
-          { time: '16:00', note: '' },
-          { time: '17:00', note: 'Yoğun' },
-          { time: '17:30', note: 'Yoğun' },
-          { time: '18:00', note: '' },
-          { time: '18:30', note: '' },
-          { time: '19:00', note: '' },
-          { time: '20:00', note: '' },
-          { time: '21:00', note: 'Son sefer' },
-        ],
-      },
-      {
-        line: '11-C',
-        route: 'Kampüs - Terminal',
-        color: '#4ECDC4',
-        schedule: [
-          { time: '07:00', note: 'İlk sefer' },
-          { time: '07:45', note: '' },
-          { time: '08:15', note: 'Yoğun' },
-          { time: '08:45', note: '' },
-          { time: '09:15', note: '' },
-          { time: '09:45', note: '' },
-          { time: '10:15', note: '' },
-          { time: '10:45', note: '' },
-          { time: '11:15', note: '' },
-          { time: '11:45', note: '' },
-          { time: '12:15', note: 'Öğle' },
-          { time: '12:45', note: '' },
-          { time: '13:15', note: '' },
-          { time: '14:00', note: '' },
-          { time: '15:00', note: '' },
-          { time: '16:00', note: '' },
-          { time: '17:15', note: 'Yoğun' },
-          { time: '17:45', note: '' },
-          { time: '18:15', note: '' },
-          { time: '19:00', note: '' },
-          { time: '20:00', note: '' },
-          { time: '21:30', note: 'Son sefer' },
-        ],
-      },
-    ],
+    latitude: 40.57169680919635,
+    longitude: 34.98447822622024,
+    description: 'Kampüs Otobüs Durağı',
+  },
+  {
+    id: 'velipasa',
+    name: 'Velipaşa Kahvecisi',
+    type: 'cafeteria',
+    latitude: 40.57190880671348,
+    longitude: 34.98507826322064,
+    description: 'Velipaşa Kahvecisi',
+  },
+  {
+    id: 'genc-ofis',
+    name: 'Genç Ofis',
+    type: 'building',
+    latitude: 40.57228881398772,
+    longitude: 34.985224325064344,
+    description: 'Genç Ofis',
+  },
+  {
+    id: 'yemekhane',
+    name: 'Yemekhane',
+    type: 'cafeteria',
+    latitude: 40.57214404710539,
+    longitude: 34.98523221917329,
+    description: 'Merkez Yemekhane',
+  },
+  {
+    id: 'guvenlik-2',
+    name: 'Güvenlik',
+    type: 'security',
+    latitude: 40.567962135251335,
+    longitude: 34.97740287752038,
+    description: 'Kampüs Güvenlik Birimi',
+  },
+  {
+    id: 'ilahiyat-kafeterya',
+    name: 'İlahiyat Fakültesi Kafeterya',
+    type: 'cafeteria',
+    latitude: 40.57310131924957,
+    longitude: 34.98443522782947,
+    description: 'İlahiyat Fakültesi Kafeteryası',
   },
 ];
 
-// Tüm konumları birleştir
-const allLocations = [...campusLocations, ...busStops];
+// Otobüs saatleri
+const busSchedule = {
+  '11-A': {
+    line: '11-A',
+    route: 'Kampüs - Şehir Merkezi',
+    color: '#FF6B6B',
+    schedule: [
+      { time: '07:30', note: 'İlk sefer' },
+      { time: '08:00', note: '' },
+      { time: '08:30', note: 'Yoğun' },
+      { time: '09:00', note: '' },
+      { time: '09:30', note: '' },
+      { time: '10:00', note: '' },
+      { time: '10:30', note: '' },
+      { time: '11:00', note: '' },
+      { time: '11:30', note: '' },
+      { time: '12:00', note: 'Öğle' },
+      { time: '12:30', note: '' },
+      { time: '13:00', note: '' },
+      { time: '13:30', note: '' },
+      { time: '14:00', note: '' },
+      { time: '15:00', note: '' },
+      { time: '16:00', note: '' },
+      { time: '17:00', note: 'Yoğun' },
+      { time: '17:30', note: 'Yoğun' },
+      { time: '18:00', note: '' },
+      { time: '18:30', note: '' },
+      { time: '19:00', note: '' },
+      { time: '20:00', note: '' },
+      { time: '21:00', note: 'Son sefer' },
+    ],
+  },
+  '11-C': {
+    line: '11-C',
+    route: 'Kampüs - Terminal',
+    color: '#4ECDC4',
+    schedule: [
+      { time: '07:00', note: 'İlk sefer' },
+      { time: '07:45', note: '' },
+      { time: '08:15', note: 'Yoğun' },
+      { time: '08:45', note: '' },
+      { time: '09:15', note: '' },
+      { time: '09:45', note: '' },
+      { time: '10:15', note: '' },
+      { time: '10:45', note: '' },
+      { time: '11:15', note: '' },
+      { time: '11:45', note: '' },
+      { time: '12:15', note: 'Öğle' },
+      { time: '12:45', note: '' },
+      { time: '13:15', note: '' },
+      { time: '14:00', note: '' },
+      { time: '15:00', note: '' },
+      { time: '16:00', note: '' },
+      { time: '17:15', note: 'Yoğun' },
+      { time: '17:45', note: '' },
+      { time: '18:15', note: '' },
+      { time: '19:00', note: '' },
+      { time: '20:00', note: '' },
+      { time: '21:30', note: 'Son sefer' },
+    ],
+  },
+};
+
+// Kampüs merkezi (tüm koordinatların ortası)
+const CAMPUS_CENTER = {
+  latitude: 40.5705,
+  longitude: 34.9825,
+  latitudeDelta: 0.008,
+  longitudeDelta: 0.008,
+};
 
 export default function MapScreen() {
-  const [selectedType, setSelectedType] = useState<LocationType>('all');
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const mapRef = useRef<MapView>(null);
+  const [selectedType, setSelectedType] = useState<LocationType | 'all'>('all');
+  const [selectedLocation, setSelectedLocation] = useState<CampusLocation | null>(null);
   const [showBusModal, setShowBusModal] = useState(false);
-  const [selectedBus, setSelectedBus] = useState<typeof busStops[0] | null>(null);
   const [selectedBusLine, setSelectedBusLine] = useState<string>('11-A');
 
   const filteredLocations =
     selectedType === 'all'
-      ? allLocations
-      : allLocations.filter((loc) => loc.type === selectedType);
+      ? campusLocations
+      : campusLocations.filter((loc) => loc.type === selectedType);
 
-  const filterTypes: LocationType[] = ['all', 'building', 'library', 'bus'];
+  const filterTypes: (LocationType | 'all')[] = ['all', 'building', 'parking', 'cafeteria', 'bus'];
 
-  const handleBusPress = (busStop: typeof busStops[0]) => {
-    setSelectedBus(busStop);
-    setShowBusModal(true);
+  const handleMarkerPress = (location: CampusLocation) => {
+    setSelectedLocation(location);
+    if (location.type === 'bus') {
+      setShowBusModal(true);
+    }
+  };
+
+  const handleLocationCardPress = (location: CampusLocation) => {
+    setSelectedLocation(location);
+    if (location.type === 'bus') {
+      setShowBusModal(true);
+    }
+    // Haritayı konuma taşı
+    mapRef.current?.animateToRegion({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.003,
+      longitudeDelta: 0.003,
+    }, 500);
   };
 
   const getNextBus = (schedule: { time: string; note: string }[]) => {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
+
     for (const item of schedule) {
       const [hours, minutes] = item.time.split(':').map(Number);
       const busTime = hours * 60 + minutes;
@@ -131,6 +340,10 @@ export default function MapScreen() {
     return null;
   };
 
+  const getMarkerColor = (type: string) => {
+    return typeConfig[type]?.markerColor || '#94a3b8';
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -139,74 +352,50 @@ export default function MapScreen() {
         <Text style={styles.headerSubtitle}>Konumları keşfedin</Text>
       </LinearGradient>
 
-      {/* Map Placeholder */}
+      {/* Google Maps */}
       <View style={styles.mapContainer}>
-        <LinearGradient
-          colors={['#1e293b', '#0f172a']}
-          style={styles.mapPlaceholder}
+        <MapView
+          ref={mapRef}
+          style={styles.map}
+          provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+          initialRegion={CAMPUS_CENTER}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+          showsCompass={true}
+          mapType="hybrid"
         >
-          {/* Grid pattern */}
-          <View style={styles.gridOverlay}>
-            {[...Array(5)].map((_, i) => (
-              <View key={`h-${i}`} style={[styles.gridLine, styles.gridLineH, { top: `${20 * (i + 1)}%` }]} />
-            ))}
-            {[...Array(5)].map((_, i) => (
-              <View key={`v-${i}`} style={[styles.gridLine, styles.gridLineV, { left: `${20 * (i + 1)}%` }]} />
-            ))}
-          </View>
-
-          {/* Location markers */}
-          <View style={styles.markersContainer}>
-            {filteredLocations.map((loc, index) => {
-              const config = typeConfig[loc.type];
-              const positions = [
-                { top: '20%', left: '30%' },
-                { top: '35%', left: '60%' },
-                { top: '50%', left: '25%' },
-                { top: '45%', left: '70%' },
-                { top: '65%', left: '40%' },
-                { top: '30%', left: '15%' },
-                { top: '75%', left: '65%' },
-                { top: '55%', left: '50%' },
-                { top: '15%', left: '75%' }, // Otobüs durağı pozisyonu
-              ];
-              const pos = positions[index % positions.length];
-
-              return (
-                <TouchableOpacity
-                  key={loc.id}
-                  style={[
-                    styles.marker,
-                    { top: pos.top, left: pos.left },
-                    selectedLocation === loc.id && styles.markerSelected,
-                  ]}
-                  onPress={() => {
-                    if (loc.type === 'bus') {
-                      handleBusPress(loc as typeof busStops[0]);
-                    } else {
-                      setSelectedLocation(selectedLocation === loc.id ? null : loc.id);
-                    }
-                  }}
-                >
-                  <View style={[styles.markerIcon, { backgroundColor: config.color }]}>
-                    <Ionicons name={config.icon as any} size={16} color="#fff" />
-                  </View>
-                  {selectedLocation === loc.id && (
-                    <View style={styles.markerLabel}>
-                      <Text style={styles.markerLabelText}>{loc.name}</Text>
+          {filteredLocations.map((location) => {
+            const config = typeConfig[location.type] || typeConfig.other;
+            return (
+              <Marker
+                key={location.id}
+                coordinate={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                }}
+                title={location.name}
+                description={location.description}
+                pinColor={config.markerColor}
+                onPress={() => handleMarkerPress(location)}
+              >
+                <View style={[styles.customMarker, { backgroundColor: config.markerColor }]}>
+                  <Ionicons name={config.icon as any} size={16} color="#fff" />
+                </View>
+                <Callout tooltip>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutTitle}>{location.name}</Text>
+                    {location.description && (
+                      <Text style={styles.calloutDescription}>{location.description}</Text>
+                    )}
+                    <View style={[styles.calloutBadge, { backgroundColor: config.markerColor }]}>
+                      <Text style={styles.calloutBadgeText}>{config.label}</Text>
                     </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Compass */}
-          <View style={styles.compass}>
-            <Text style={styles.compassText}>N</Text>
-            <Ionicons name="navigate" size={24} color="#667eea" />
-          </View>
-        </LinearGradient>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          })}
+        </MapView>
       </View>
 
       {/* Type Filter */}
@@ -252,27 +441,20 @@ export default function MapScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.listTitle}>
-          {selectedType === 'all' ? 'Tüm Konumlar' : typeConfig[selectedType].label}
+          {selectedType === 'all' ? 'Tüm Konumlar' : typeConfig[selectedType]?.label || 'Konumlar'}
           <Text style={styles.listCount}> ({filteredLocations.length})</Text>
         </Text>
 
         {filteredLocations.map((location) => {
-          const config = typeConfig[location.type];
-          const isSelected = selectedLocation === location.id;
+          const config = typeConfig[location.type] || typeConfig.other;
+          const isSelected = selectedLocation?.id === location.id;
           const isBus = location.type === 'bus';
-          const busData = isBus ? location as typeof busStops[0] : null;
 
           return (
             <TouchableOpacity
               key={location.id}
               style={[styles.locationCard, isSelected && styles.locationCardSelected]}
-              onPress={() => {
-                if (isBus && busData) {
-                  handleBusPress(busData);
-                } else {
-                  setSelectedLocation(isSelected ? null : location.id);
-                }
-              }}
+              onPress={() => handleLocationCardPress(location)}
               activeOpacity={0.7}
             >
               <View style={[styles.locationIcon, { backgroundColor: config.color + '20' }]}>
@@ -281,9 +463,9 @@ export default function MapScreen() {
               <View style={styles.locationInfo}>
                 <Text style={styles.locationName}>{location.name}</Text>
                 <Text style={styles.locationType}>{config.label}</Text>
-                {isBus && busData ? (
+                {isBus ? (
                   <View style={styles.busPreview}>
-                    {busData.buses.map((bus) => {
+                    {Object.values(busSchedule).map((bus) => {
                       const nextBus = getNextBus(bus.schedule);
                       return (
                         <View key={bus.line} style={styles.busPreviewItem}>
@@ -307,10 +489,10 @@ export default function MapScreen() {
               </View>
               <View style={styles.locationActions}>
                 <TouchableOpacity style={styles.actionIcon}>
-                  <Ionicons 
-                    name={isBus ? "time-outline" : "navigate-outline"} 
-                    size={20} 
-                    color="#667eea" 
+                  <Ionicons
+                    name={isBus ? 'time-outline' : 'navigate-outline'}
+                    size={20}
+                    color="#667eea"
                   />
                 </TouchableOpacity>
               </View>
@@ -330,12 +512,12 @@ export default function MapScreen() {
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <View style={styles.modalTitleRow}>
-                <View style={[styles.modalIconContainer, { backgroundColor: '#BB8FCE20' }]}>
-                  <Ionicons name="bus" size={24} color="#BB8FCE" />
+                <View style={[styles.modalIconContainer, { backgroundColor: '#EC489920' }]}>
+                  <Ionicons name="bus" size={24} color="#EC4899" />
                 </View>
                 <View>
                   <Text style={styles.modalTitle}>Otobüs Saatleri</Text>
-                  <Text style={styles.modalSubtitle}>{selectedBus?.name}</Text>
+                  <Text style={styles.modalSubtitle}>Kampüs Otobüs Durağı</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => setShowBusModal(false)}>
@@ -345,7 +527,7 @@ export default function MapScreen() {
 
             {/* Hat Seçici */}
             <View style={styles.busLineTabs}>
-              {selectedBus?.buses.map((bus) => (
+              {Object.values(busSchedule).map((bus) => (
                 <TouchableOpacity
                   key={bus.line}
                   style={[
@@ -372,57 +554,53 @@ export default function MapScreen() {
 
             {/* Sefer Saatleri */}
             <ScrollView style={styles.scheduleList}>
-              {selectedBus?.buses
-                .find((b) => b.line === selectedBusLine)
-                ?.schedule.map((item, index) => {
-                  const now = new Date();
-                  const currentTime = now.getHours() * 60 + now.getMinutes();
-                  const [hours, minutes] = item.time.split(':').map(Number);
-                  const busTime = hours * 60 + minutes;
-                  const isPast = busTime < currentTime;
-                  const isNext = !isPast && index === selectedBus?.buses
-                    .find((b) => b.line === selectedBusLine)
-                    ?.schedule.findIndex((s) => {
-                      const [h, m] = s.time.split(':').map(Number);
-                      return h * 60 + m > currentTime;
-                    });
+              {busSchedule[selectedBusLine as keyof typeof busSchedule]?.schedule.map((item, index) => {
+                const now = new Date();
+                const currentTime = now.getHours() * 60 + now.getMinutes();
+                const [hours, minutes] = item.time.split(':').map(Number);
+                const busTime = hours * 60 + minutes;
+                const isPast = busTime < currentTime;
+                const isNext = !isPast && index === busSchedule[selectedBusLine as keyof typeof busSchedule]?.schedule.findIndex((s) => {
+                  const [h, m] = s.time.split(':').map(Number);
+                  return h * 60 + m > currentTime;
+                });
 
-                  return (
-                    <View
-                      key={index}
-                      style={[
-                        styles.scheduleItem,
-                        isPast && styles.scheduleItemPast,
-                        isNext && styles.scheduleItemNext,
-                      ]}
-                    >
-                      <View style={styles.scheduleTimeContainer}>
-                        <Text style={[
-                          styles.scheduleTime,
-                          isPast && styles.scheduleTimePast,
-                          isNext && styles.scheduleTimeNext,
-                        ]}>
-                          {item.time}
-                        </Text>
-                        {isNext && (
-                          <View style={styles.nextBadge}>
-                            <Text style={styles.nextBadgeText}>Sonraki</Text>
-                          </View>
-                        )}
-                      </View>
-                      {item.note ? (
-                        <View style={[
-                          styles.noteBadge,
-                          item.note === 'Yoğun' && styles.noteBadgeBusy,
-                          item.note === 'Son sefer' && styles.noteBadgeLast,
-                          item.note === 'İlk sefer' && styles.noteBadgeFirst,
-                        ]}>
-                          <Text style={styles.noteText}>{item.note}</Text>
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.scheduleItem,
+                      isPast && styles.scheduleItemPast,
+                      isNext && styles.scheduleItemNext,
+                    ]}
+                  >
+                    <View style={styles.scheduleTimeContainer}>
+                      <Text style={[
+                        styles.scheduleTime,
+                        isPast && styles.scheduleTimePast,
+                        isNext && styles.scheduleTimeNext,
+                      ]}>
+                        {item.time}
+                      </Text>
+                      {isNext && (
+                        <View style={styles.nextBadge}>
+                          <Text style={styles.nextBadgeText}>Sonraki</Text>
                         </View>
-                      ) : null}
+                      )}
                     </View>
-                  );
-                })}
+                    {item.note ? (
+                      <View style={[
+                        styles.noteBadge,
+                        item.note === 'Yoğun' && styles.noteBadgeBusy,
+                        item.note === 'Son sefer' && styles.noteBadgeLast,
+                        item.note === 'İlk sefer' && styles.noteBadgeFirst,
+                      ]}>
+                        <Text style={styles.noteText}>{item.note}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
             </ScrollView>
 
             {/* Alt Bilgi */}
@@ -460,87 +638,61 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   mapContainer: {
-    height: 220,
+    height: 280,
     marginHorizontal: 16,
     borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 12,
-  },
-  mapPlaceholder: {
-    flex: 1,
     borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.2)',
-    borderRadius: 20,
+    borderColor: 'rgba(102, 126, 234, 0.3)',
   },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  map: {
+    flex: 1,
   },
-  gridLine: {
-    position: 'absolute',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-  },
-  gridLineH: {
-    height: 1,
-    left: 0,
-    right: 0,
-  },
-  gridLineV: {
-    width: 1,
-    top: 0,
-    bottom: 0,
-  },
-  markersContainer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  marker: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  markerSelected: {
-    zIndex: 10,
-  },
-  markerIcon: {
+  customMarker: {
     width: 32,
     height: 32,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 5,
   },
-  markerLabel: {
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginTop: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  markerLabelText: {
-    fontSize: 11,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  compass: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    padding: 8,
+  calloutContainer: {
+    backgroundColor: '#1a1a2e',
+    padding: 12,
     borderRadius: 12,
+    minWidth: 150,
+    maxWidth: 200,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  compassText: {
-    fontSize: 10,
-    color: '#94a3b8',
+  calloutTitle: {
+    fontSize: 14,
     fontWeight: '700',
+    color: '#fff',
     marginBottom: 4,
+  },
+  calloutDescription: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginBottom: 8,
+  },
+  calloutBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  calloutBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#fff',
   },
   filterContainer: {
     paddingHorizontal: 16,

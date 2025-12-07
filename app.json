@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "AIzaSyCgJb7CcQqsL41-LUx2JOTHN7uW4Q3oJ_Q"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +23,12 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.mobiluyg"
+      "package": "com.anonymous.mobiluyg",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCgJb7CcQqsL41-LUx2JOTHN7uW4Q3oJ_Q"
+        }
+      }
     },
     "web": {
       "output": "static",
