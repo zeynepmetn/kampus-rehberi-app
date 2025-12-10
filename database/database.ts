@@ -667,6 +667,47 @@ export const getAllExams = async (): Promise<Exam[]> => {
   );
 };
 
+export const updateExam = async (id: number, exam: Partial<Exam>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (exam.course_id !== undefined) {
+    updates.push('course_id = ?');
+    values.push(exam.course_id);
+  }
+  if (exam.exam_type !== undefined) {
+    updates.push('exam_type = ?');
+    values.push(exam.exam_type);
+  }
+  if (exam.exam_date !== undefined) {
+    updates.push('exam_date = ?');
+    values.push(exam.exam_date);
+  }
+  if (exam.start_time !== undefined) {
+    updates.push('start_time = ?');
+    values.push(exam.start_time);
+  }
+  if (exam.end_time !== undefined) {
+    updates.push('end_time = ?');
+    values.push(exam.end_time);
+  }
+  if (exam.classroom !== undefined) {
+    updates.push('classroom = ?');
+    values.push(exam.classroom);
+  }
+  if (exam.faculty !== undefined) {
+    updates.push('faculty = ?');
+    values.push(exam.faculty);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(`UPDATE exams SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
 export const deleteExam = async (id: number): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 

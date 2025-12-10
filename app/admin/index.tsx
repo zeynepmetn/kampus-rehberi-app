@@ -40,18 +40,10 @@ const menuItems: AdminMenuItem[] = [
   {
     id: 'courses',
     title: 'Dersler',
-    description: 'Ders ekle, düzenle, sil',
+    description: 'Ders ekle, düzenle, sil ve program yönet',
     icon: 'book',
     color: '#FF6B6B',
     route: '/admin/courses',
-  },
-  {
-    id: 'schedules',
-    title: 'Ders Programları',
-    description: 'Ders saatlerini yönet',
-    icon: 'calendar',
-    color: '#F59E0B',
-    route: '/admin/schedules',
   },
   {
     id: 'exams',

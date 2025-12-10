@@ -1,10 +1,13 @@
 import {
+    Course,
+    createExam,
     deleteExam,
     Department,
     Exam,
     getAllExams,
     getCoursesByDepartment,
     getDepartments,
+    updateExam,
 } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,10 +16,12 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Modal,
     RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -30,10 +35,23 @@ const examTypes = [
 export default function ExamsManagement() {
   const [exams, setExams] = useState<Exam[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [selectedExamType, setSelectedExamType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [showCoursePicker, setShowCoursePicker] = useState(false);
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
+  const [examForm, setExamForm] = useState({
+    course_id: '',
+    examType: 'midterm',
+    examDate: '',
+    startTime: '10:00',
+    endTime: '12:00',
+    classroom: '',
+    faculty: '',
+  });
 
   useEffect(() => {
     loadData();
@@ -41,6 +59,9 @@ export default function ExamsManagement() {
 
   useEffect(() => {
     loadExams();
+    if (selectedDepartment) {
+      loadCourses();
+    }
   }, [selectedDepartment, selectedExamType]);
 
   const loadData = async () => {
@@ -54,6 +75,16 @@ export default function ExamsManagement() {
       console.error('Error loading departments:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCourses = async () => {
+    if (!selectedDepartment) return;
+    try {
+      const deptCourses = await getCoursesByDepartment(selectedDepartment.id!);
+      setCourses(deptCourses);
+    } catch (error) {
+      console.error('Error loading courses:', error);
     }
   };
 
@@ -89,6 +120,81 @@ export default function ExamsManagement() {
     setIsRefreshing(true);
     await loadExams();
     setIsRefreshing(false);
+  };
+
+  const resetForm = () => {
+    setExamForm({
+      course_id: '',
+      examType: 'midterm',
+      examDate: '',
+      startTime: '10:00',
+      endTime: '12:00',
+      classroom: '',
+      faculty: '',
+    });
+  };
+
+  const openModal = (exam?: Exam) => {
+    if (selectedDepartment) {
+      loadCourses();
+    }
+    if (exam) {
+      setEditingExam(exam);
+      setExamForm({
+        course_id: exam.course_id.toString(),
+        examType: exam.exam_type,
+        examDate: exam.exam_date,
+        startTime: exam.start_time,
+        endTime: exam.end_time,
+        classroom: exam.classroom,
+        faculty: exam.faculty,
+      });
+    } else {
+      resetForm();
+      setEditingExam(null);
+    }
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!examForm.course_id || !examForm.examDate || !examForm.classroom.trim() || !examForm.faculty.trim()) {
+      Alert.alert('Hata', 'Tüm alanları doldurun');
+      return;
+    }
+
+    try {
+      if (editingExam) {
+        await updateExam(editingExam.id!, {
+          course_id: parseInt(examForm.course_id),
+          exam_type: examForm.examType,
+          exam_date: examForm.examDate,
+          start_time: examForm.startTime,
+          end_time: examForm.endTime,
+          classroom: examForm.classroom.trim(),
+          faculty: examForm.faculty.trim(),
+        });
+        Alert.alert('Başarılı', 'Sınav güncellendi');
+      } else {
+        await createExam({
+          course_id: parseInt(examForm.course_id),
+          exam_type: examForm.examType,
+          exam_date: examForm.examDate,
+          start_time: examForm.startTime,
+          end_time: examForm.endTime,
+          classroom: examForm.classroom.trim(),
+          faculty: examForm.faculty.trim(),
+        });
+        Alert.alert('Başarılı', 'Sınav eklendi');
+      }
+
+      setShowModal(false);
+      resetForm();
+      setEditingExam(null);
+      loadExams();
+    } catch (error) {
+      console.error('Error saving exam:', error);
+      Alert.alert('Hata', editingExam ? 'Sınav güncellenemedi' : 'Sınav eklenemedi');
+    }
   };
 
   const handleDelete = async (exam: Exam) => {
@@ -148,7 +254,7 @@ export default function ExamsManagement() {
           <Text style={styles.headerTitle}>Sınav Yönetimi</Text>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => router.push('/admin/courses')}
+            onPress={() => openModal()}
           >
             <Ionicons name="add" size={24} color="#fff" />
           </TouchableOpacity>
@@ -225,7 +331,7 @@ export default function ExamsManagement() {
             <Text style={styles.emptyText}>Sınav bulunmuyor</Text>
             <TouchableOpacity
               style={styles.emptyButton}
-              onPress={() => router.push('/admin/courses')}
+              onPress={() => openModal()}
             >
               <Ionicons name="add" size={20} color="#fff" />
               <Text style={styles.emptyButtonText}>Sınav Ekle</Text>
@@ -278,7 +384,7 @@ export default function ExamsManagement() {
                 <View style={styles.examActions}>
                   <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={() => router.push('/admin/courses')}
+                    onPress={() => openModal(exam)}
                   >
                     <Ionicons name="create-outline" size={18} color="#667eea" />
                     <Text style={[styles.actionText, { color: '#667eea' }]}>Düzenle</Text>
@@ -296,6 +402,196 @@ export default function ExamsManagement() {
           })
         )}
       </ScrollView>
+
+      {/* Course Picker Modal */}
+      <Modal
+        visible={showCoursePicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCoursePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ders Seçin</Text>
+              <TouchableOpacity onPress={() => setShowCoursePicker(false)}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView>
+              {courses.map((course) => (
+                <TouchableOpacity
+                  key={course.id}
+                  style={[
+                    styles.modalItem,
+                    examForm.course_id === course.id?.toString() && styles.modalItemActive,
+                  ]}
+                  onPress={() => {
+                    setExamForm({ ...examForm, course_id: course.id!.toString() });
+                    setShowCoursePicker(false);
+                  }}
+                >
+                  <View>
+                    <Text style={styles.modalItemText}>{course.code} - {course.name}</Text>
+                    <Text style={styles.modalItemSubtext}>
+                      {course.class_year}. Sınıf • {course.semester}. Dönem
+                    </Text>
+                  </View>
+                  {examForm.course_id === course.id?.toString() && (
+                    <Ionicons name="checkmark" size={24} color="#667eea" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Exam Form Modal */}
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { maxHeight: '90%' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingExam ? 'Sınav Düzenle' : 'Yeni Sınav'}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                setShowModal(false);
+                setEditingExam(null);
+                resetForm();
+              }}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.formContainer}>
+              {!selectedDepartment && (
+                <View style={styles.warningBox}>
+                  <Ionicons name="alert-circle" size={20} color="#F59E0B" />
+                  <Text style={styles.warningText}>Lütfen önce bir bölüm seçin</Text>
+                </View>
+              )}
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Ders *</Text>
+                <TouchableOpacity
+                  style={[styles.formInput, editingExam && { opacity: 0.6 }]}
+                  onPress={() => {
+                    if (editingExam) {
+                      Alert.alert('Bilgi', 'Düzenleme modunda ders değiştirilemez');
+                      return;
+                    }
+                    if (selectedDepartment) {
+                      setShowCoursePicker(true);
+                    } else {
+                      Alert.alert('Uyarı', 'Lütfen önce bir bölüm seçin');
+                    }
+                  }}
+                >
+                  <Text style={[styles.formInputText, !examForm.course_id && styles.placeholder]}>
+                    {courses.find((c) => c.id?.toString() === examForm.course_id)?.name || 'Ders Seçin'}
+                  </Text>
+                  {!editingExam && <Ionicons name="chevron-down" size={20} color="#64748b" />}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Sınav Türü</Text>
+                <View style={styles.buttonGroup}>
+                  {examTypes.map((type) => (
+                    <TouchableOpacity
+                      key={type.value}
+                      style={[
+                        styles.selectButton,
+                        { flex: 1 },
+                        examForm.examType === type.value && styles.selectButtonActive,
+                        examForm.examType === type.value && { backgroundColor: type.color },
+                      ]}
+                      onPress={() => setExamForm({ ...examForm, examType: type.value })}
+                    >
+                      <Text
+                        style={[
+                          styles.selectButtonText,
+                          examForm.examType === type.value && styles.selectButtonTextActive,
+                        ]}
+                      >
+                        {type.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Sınav Tarihi * (YYYY-MM-DD)</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={examForm.examDate}
+                  onChangeText={(v) => setExamForm({ ...examForm, examDate: v })}
+                  placeholder="2025-01-15"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
+
+              <View style={styles.formRow}>
+                <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.formLabel}>Başlangıç</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={examForm.startTime}
+                    onChangeText={(v) => setExamForm({ ...examForm, startTime: v })}
+                    placeholder="10:00"
+                    placeholderTextColor="#64748b"
+                  />
+                </View>
+                <View style={[styles.formGroup, { flex: 1 }]}>
+                  <Text style={styles.formLabel}>Bitiş</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    value={examForm.endTime}
+                    onChangeText={(v) => setExamForm({ ...examForm, endTime: v })}
+                    placeholder="12:00"
+                    placeholderTextColor="#64748b"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Sınıf *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={examForm.classroom}
+                  onChangeText={(v) => setExamForm({ ...examForm, classroom: v })}
+                  placeholder="S-101"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Fakülte/Bina *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={examForm.faculty}
+                  onChangeText={(v) => setExamForm({ ...examForm, faculty: v })}
+                  placeholder="Mühendislik Fakültesi"
+                  placeholderTextColor="#64748b"
+                />
+              </View>
+
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>
+                  {editingExam ? 'Güncelle' : 'Sınav Ekle'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -469,6 +765,136 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#1a1a2e',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+  },
+  modalItemActive: {
+    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+  },
+  modalItemText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalItemSubtext: {
+    color: '#64748b',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  formContainer: {
+    padding: 20,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formRow: {
+    flexDirection: 'row',
+  },
+  formLabel: {
+    fontSize: 13,
+    color: '#94a3b8',
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 10,
+    padding: 12,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  formInputText: {
+    color: '#fff',
+    fontSize: 14,
+    flex: 1,
+  },
+  placeholder: {
+    color: '#64748b',
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  selectButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  selectButtonActive: {
+    backgroundColor: '#667eea',
+  },
+  selectButtonText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  selectButtonTextActive: {
+    color: '#fff',
+  },
+  saveButton: {
+    backgroundColor: '#667eea',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 20,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    gap: 8,
+  },
+  warningText: {
+    color: '#F59E0B',
+    fontSize: 13,
     fontWeight: '600',
   },
 });

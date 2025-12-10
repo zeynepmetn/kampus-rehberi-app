@@ -2,17 +2,13 @@ import {
     Course,
     CourseSchedule,
     Department,
-    Exam,
     createCourse,
     createCourseSchedule,
-    createExam,
     deleteCourse,
     deleteCourseSchedule,
-    deleteExam,
     getCourseSchedules,
     getCoursesByDepartment,
     getDepartments,
-    getExamsByCourse,
     updateCourse,
 } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,11 +29,6 @@ import {
 } from 'react-native';
 
 const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
-const examTypes = [
-  { value: 'midterm', label: 'Vize' },
-  { value: 'final', label: 'Final' },
-  { value: 'makeup', label: 'Bütünleme' },
-];
 
 export default function CoursesManagement() {
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -70,18 +61,6 @@ export default function CoursesManagement() {
     day: 'Pazartesi',
     startTime: '09:00',
     endTime: '11:00',
-    classroom: '',
-    faculty: '',
-  });
-
-  // Exam Modal
-  const [showExamModal, setShowExamModal] = useState(false);
-  const [exams, setExams] = useState<Exam[]>([]);
-  const [examForm, setExamForm] = useState({
-    examType: 'midterm',
-    examDate: '',
-    startTime: '10:00',
-    endTime: '12:00',
     classroom: '',
     faculty: '',
   });
@@ -297,63 +276,6 @@ export default function CoursesManagement() {
     }
   };
 
-  // Exam Functions
-  const openExamModal = async (course: Course) => {
-    setSelectedCourse(course);
-    try {
-      const data = await getExamsByCourse(course.id!);
-      setExams(data);
-    } catch (error) {
-      console.error('Error loading exams:', error);
-    }
-    setShowExamModal(true);
-  };
-
-  const handleAddExam = async () => {
-    if (!selectedCourse || !examForm.examDate || !examForm.classroom.trim() || !examForm.faculty.trim()) {
-      Alert.alert('Hata', 'Tüm alanları doldurun');
-      return;
-    }
-
-    try {
-      await createExam({
-        course_id: selectedCourse.id!,
-        exam_type: examForm.examType,
-        exam_date: examForm.examDate,
-        start_time: examForm.startTime,
-        end_time: examForm.endTime,
-        classroom: examForm.classroom.trim(),
-        faculty: examForm.faculty.trim(),
-      });
-
-      const data = await getExamsByCourse(selectedCourse.id!);
-      setExams(data);
-
-      setExamForm({
-        examType: 'midterm',
-        examDate: '',
-        startTime: '10:00',
-        endTime: '12:00',
-        classroom: '',
-        faculty: '',
-      });
-
-      Alert.alert('Başarılı', 'Sınav eklendi');
-    } catch (error) {
-      console.error('Error adding exam:', error);
-      Alert.alert('Hata', 'Sınav eklenemedi');
-    }
-  };
-
-  const handleDeleteExam = async (id: number) => {
-    try {
-      await deleteExam(id);
-      const data = await getExamsByCourse(selectedCourse!.id!);
-      setExams(data);
-    } catch (error) {
-      console.error('Error deleting exam:', error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -450,13 +372,6 @@ export default function CoursesManagement() {
                 >
                   <Ionicons name="calendar-outline" size={18} color="#4ECDC4" />
                   <Text style={[styles.actionText, { color: '#4ECDC4' }]}>Program</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => openExamModal(course)}
-                >
-                  <Ionicons name="document-text-outline" size={18} color="#F59E0B" />
-                  <Text style={[styles.actionText, { color: '#F59E0B' }]}>Sınav</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
@@ -836,139 +751,6 @@ export default function CoursesManagement() {
 
               <TouchableOpacity style={styles.saveButton} onPress={handleAddSchedule}>
                 <Text style={styles.saveButtonText}>Program Ekle</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Exam Modal */}
-      <Modal
-        visible={showExamModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowExamModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { maxHeight: '85%' }]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Sınav Takvimi</Text>
-              <TouchableOpacity onPress={() => setShowExamModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.formContainer}>
-              <Text style={styles.subTitle}>{selectedCourse?.name}</Text>
-
-              {/* Existing Exams */}
-              {exams.length > 0 && (
-                <View style={styles.existingList}>
-                  {exams.map((exam) => (
-                    <View key={exam.id} style={styles.existingItem}>
-                      <View>
-                        <Text style={styles.existingItemTitle}>
-                          {examTypes.find((t) => t.value === exam.exam_type)?.label} -{' '}
-                          {exam.exam_date}
-                        </Text>
-                        <Text style={styles.existingItemSubtitle}>
-                          {exam.start_time}-{exam.end_time} • {exam.classroom}
-                        </Text>
-                      </View>
-                      <TouchableOpacity onPress={() => handleDeleteExam(exam.id!)}>
-                        <Ionicons name="trash-outline" size={20} color="#ef4444" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <Text style={styles.formSectionTitle}>Yeni Sınav Ekle</Text>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Sınav Türü</Text>
-                <View style={styles.buttonGroup}>
-                  {examTypes.map((t) => (
-                    <TouchableOpacity
-                      key={t.value}
-                      style={[
-                        styles.selectButton,
-                        { flex: 1 },
-                        examForm.examType === t.value && styles.selectButtonActive,
-                      ]}
-                      onPress={() => setExamForm({ ...examForm, examType: t.value })}
-                    >
-                      <Text
-                        style={[
-                          styles.selectButtonText,
-                          examForm.examType === t.value && styles.selectButtonTextActive,
-                        ]}
-                      >
-                        {t.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Sınav Tarihi * (YYYY-MM-DD)</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={examForm.examDate}
-                  onChangeText={(v) => setExamForm({ ...examForm, examDate: v })}
-                  placeholder="2025-01-15"
-                  placeholderTextColor="#64748b"
-                />
-              </View>
-
-              <View style={styles.formRow}>
-                <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-                  <Text style={styles.formLabel}>Başlangıç</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={examForm.startTime}
-                    onChangeText={(v) => setExamForm({ ...examForm, startTime: v })}
-                    placeholder="10:00"
-                    placeholderTextColor="#64748b"
-                  />
-                </View>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                  <Text style={styles.formLabel}>Bitiş</Text>
-                  <TextInput
-                    style={styles.formInput}
-                    value={examForm.endTime}
-                    onChangeText={(v) => setExamForm({ ...examForm, endTime: v })}
-                    placeholder="12:00"
-                    placeholderTextColor="#64748b"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Sınıf *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={examForm.classroom}
-                  onChangeText={(v) => setExamForm({ ...examForm, classroom: v })}
-                  placeholder="S-101"
-                  placeholderTextColor="#64748b"
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Fakülte/Bina *</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={examForm.faculty}
-                  onChangeText={(v) => setExamForm({ ...examForm, faculty: v })}
-                  placeholder="Mühendislik Fakültesi"
-                  placeholderTextColor="#64748b"
-                />
-              </View>
-
-              <TouchableOpacity style={styles.saveButton} onPress={handleAddExam}>
-                <Text style={styles.saveButtonText}>Sınav Ekle</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>

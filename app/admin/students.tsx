@@ -1,27 +1,27 @@
 import {
-    createStudent,
-    deleteStudent,
-    Department,
-    getAllStudents,
-    getDepartments,
-    Student,
-    updateStudent,
+  createStudent,
+  deleteStudent,
+  Department,
+  getAllStudents,
+  getDepartments,
+  Student,
+  updateStudent,
 } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function StudentsManagement() {
@@ -37,7 +37,6 @@ export default function StudentsManagement() {
     student_number: '',
     first_name: '',
     last_name: '',
-    email: '',
     password: '',
     department_id: '',
     class_year: '1',
@@ -75,7 +74,6 @@ export default function StudentsManagement() {
       student_number: '',
       first_name: '',
       last_name: '',
-      email: '',
       password: '',
       department_id: '',
       class_year: '1',
@@ -92,7 +90,6 @@ export default function StudentsManagement() {
         student_number: student.student_number,
         first_name: student.first_name,
         last_name: student.last_name,
-        email: student.email || '',
         password: '',
         department_id: student.department_id.toString(),
         class_year: student.class_year.toString(),
@@ -122,7 +119,6 @@ export default function StudentsManagement() {
           student_number: formData.student_number.trim(),
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
-          email: formData.email.trim() || undefined,
           password: formData.password.trim() || undefined,
           department_id: parseInt(formData.department_id),
           class_year: parseInt(formData.class_year),
@@ -135,7 +131,6 @@ export default function StudentsManagement() {
           student_number: formData.student_number.trim(),
           first_name: formData.first_name.trim(),
           last_name: formData.last_name.trim(),
-          email: formData.email.trim() || undefined,
           password: formData.password.trim() || undefined,
           department_id: parseInt(formData.department_id),
           class_year: parseInt(formData.class_year),
@@ -367,19 +362,6 @@ export default function StudentsManagement() {
                   placeholderTextColor="#64748b"
                   keyboardType="numeric"
                   editable={!editingStudent}
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>E-posta</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={formData.email}
-                  onChangeText={(v) => setFormData({ ...formData, email: v })}
-                  placeholder="ahmet.yilmaz@ogrenci.edu.tr"
-                  placeholderTextColor="#64748b"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
                 />
               </View>
 
