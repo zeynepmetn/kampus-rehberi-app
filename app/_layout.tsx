@@ -58,6 +58,13 @@ export default function RootLayout() {
                       presentation: 'card',
                     }} 
                   />
+                  <Stack.Screen 
+                    name="course-selection" 
+                    options={{ 
+                      animation: 'slide_from_right',
+                      presentation: 'card',
+                    }} 
+                  />
                 </Stack>
                 <StatusBar style="light" />
               </ThemeProvider>

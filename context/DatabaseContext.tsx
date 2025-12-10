@@ -1,4 +1,4 @@
-import { initDatabase } from '@/database/database';
+import { initDatabase, seedSampleData } from '@/database/database';
 import * as SQLite from 'expo-sqlite';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -42,6 +42,10 @@ export const DatabaseProvider: React.FC<DatabaseProviderProps> = ({ children }) 
 
         const database = await initDatabase();
         setDb(database);
+
+        // Seed sample data for testing
+        await seedSampleData();
+
         setIsReady(true);
 
         console.log('Database context ready');

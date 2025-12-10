@@ -1,13 +1,18 @@
 import { useAuth } from '@/context/AuthContext';
-import { useCourses } from '@/context/CourseContext';
-import { useNotifications } from '@/context/NotificationContext';
-import { days } from '@/data/schedule';
+import { useDatabase } from '@/context/DatabaseContext';
+import {
+  CourseSchedule,
+  getEnrolledCourses,
+  getStudentWeeklySchedule,
+  StudentCourse,
+} from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,13 +20,22 @@ import {
   View,
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+
+// Course colors for visual variety
+const courseColors = [
+  '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+  '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+];
 
 export default function ScheduleScreen() {
-  const { student } = useAuth();
-  const { unreadCount } = useNotifications();
-  const { getFilteredSchedule, getSelectedCountForDay, getTotalSelectedCount } = useCourses();
+  const { isReady } = useDatabase();
+  const { student, isLoggedIn } = useAuth();
+  const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, CourseSchedule[]>>({});
   const [selectedDay, setSelectedDay] = useState(getCurrentDay());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   function getCurrentDay() {
     const dayIndex = new Date().getDay();
@@ -35,11 +49,60 @@ export default function ScheduleScreen() {
     return dayMap[dayIndex] || 'Pazartesi';
   }
 
-  const totalSelected = getTotalSelectedCount();
-  const currentDaySelected = getSelectedCountForDay(selectedDay);
-  
-  // Sadece ders seçimi yapıldıysa dersleri göster
-  const todayCourses = totalSelected > 0 ? getFilteredSchedule(selectedDay) : [];
+  useEffect(() => {
+    if (isReady && student?.id) {
+      loadData();
+    } else if (isReady && !student) {
+      setIsLoading(false);
+    }
+  }, [isReady, student]);
+
+  const loadData = async () => {
+    if (!student?.id) return;
+    
+    try {
+      setIsLoading(true);
+
+      // Load enrolled courses
+      const enrolled = await getEnrolledCourses(student.id);
+      setEnrolledCourses(enrolled);
+
+      // Load weekly schedule
+      const schedule = await getStudentWeeklySchedule(student.id);
+      setWeeklySchedule(schedule);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setIsRefreshing(false);
+  };
+
+  const todayCourses = weeklySchedule[selectedDay] || [];
+  const totalCourses = enrolledCourses.length;
+  const totalCredits = enrolledCourses.reduce((sum, c) => sum + (c.credits || 0), 0);
+
+  const getCourseColor = (index: number) => {
+    return courseColors[index % courseColors.length];
+  };
+
+  const getCoursesCountForDay = (day: string) => {
+    return (weeklySchedule[day] || []).length;
+  };
+
+  if (!isReady || isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#667eea" />
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -50,35 +113,53 @@ export default function ScheduleScreen() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>Merhaba,</Text>
-            <Text style={styles.studentName}>{student?.name || 'Öğrenci'}</Text>
-            <Text style={styles.department}>{student?.department}</Text>
+            <Text style={styles.studentName}>
+              {student?.first_name} {student?.last_name}
+            </Text>
+            <Text style={styles.department}>{student?.department_name}</Text>
           </View>
           <TouchableOpacity 
             style={styles.notificationButton}
             onPress={() => router.push('/notifications')}
           >
             <Ionicons name="notifications-outline" size={26} color="#fff" />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
           </TouchableOpacity>
+        </View>
+
+        {/* GPA Info */}
+        <View style={styles.gpaContainer}>
+          <View style={styles.gpaItem}>
+            <Text style={styles.gpaLabel}>GNO</Text>
+            <Text style={styles.gpaValue}>{student?.gno?.toFixed(2) || '0.00'}</Text>
+          </View>
+          <View style={styles.gpaDivider} />
+          <View style={styles.gpaItem}>
+            <Text style={styles.gpaLabel}>YNO</Text>
+            <Text style={styles.gpaValue}>{student?.yno?.toFixed(2) || '0.00'}</Text>
+          </View>
+          <View style={styles.gpaDivider} />
+          <View style={styles.gpaItem}>
+            <Text style={styles.gpaLabel}>Sınıf</Text>
+            <Text style={styles.gpaValue}>{student?.class_year || 1}</Text>
+          </View>
         </View>
       </LinearGradient>
 
-      {/* Seçili Ders Bilgisi veya Ders Seçimi Uyarısı */}
-      {totalSelected > 0 ? (
+      {/* Course Info or Selection Prompt */}
+      {totalCourses > 0 ? (
         <View style={styles.filterInfo}>
           <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
           <Text style={styles.filterInfoText}>
-            {totalSelected} ders seçili ({currentDaySelected} bu gün)
+            {totalCourses} ders kayıtlı • {totalCredits} kredi • {todayCourses.length} ders bugün
           </Text>
+          <TouchableOpacity onPress={() => router.push('/course-selection')}>
+            <Ionicons name="settings-outline" size={18} color="#4ECDC4" />
+          </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity 
           style={styles.selectCoursesPrompt}
-          onPress={() => router.push('/(tabs)/profile')}
+          onPress={() => router.push('/course-selection')}
         >
           <Ionicons name="add-circle-outline" size={20} color="#667eea" />
           <Text style={styles.selectCoursesText}>
@@ -96,7 +177,7 @@ export default function ScheduleScreen() {
           contentContainerStyle={styles.daySelector}
         >
           {days.map((day) => {
-            const daySelectedCount = getSelectedCountForDay(day);
+            const dayCount = getCoursesCountForDay(day);
             return (
               <TouchableOpacity
                 key={day}
@@ -114,7 +195,7 @@ export default function ScheduleScreen() {
                 >
                   {day.substring(0, 3)}
                 </Text>
-                {daySelectedCount > 0 && (
+                {dayCount > 0 && (
                   <View style={styles.dayInfo}>
                     <View
                       style={[
@@ -126,7 +207,7 @@ export default function ScheduleScreen() {
                       styles.dayCount,
                       selectedDay === day && styles.dayCountActive,
                     ]}>
-                      {daySelectedCount}
+                      {dayCount}
                     </Text>
                   </View>
                 )}
@@ -141,13 +222,20 @@ export default function ScheduleScreen() {
         style={styles.scheduleContainer}
         contentContainerStyle={styles.scheduleContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#667eea"
+          />
+        }
       >
         <Text style={styles.sectionTitle}>
           {selectedDay} Programı
         </Text>
 
-        {totalSelected === 0 ? (
-          /* Ders seçimi yapılmamış */
+        {totalCourses === 0 ? (
+          /* No courses selected */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
               <Ionicons name="book-outline" size={48} color="#667eea" />
@@ -158,51 +246,51 @@ export default function ScheduleScreen() {
             </Text>
             <TouchableOpacity 
               style={styles.selectCoursesButton}
-              onPress={() => router.push('/(tabs)/profile')}
+              onPress={() => router.push('/course-selection')}
             >
               <Ionicons name="add" size={20} color="#fff" />
               <Text style={styles.selectCoursesButtonText}>Ders Seç</Text>
             </TouchableOpacity>
           </View>
         ) : todayCourses.length === 0 ? (
-          /* Ders seçilmiş ama bu gün ders yok */
+          /* Courses selected but none today */
           <View style={styles.emptyState}>
             <Ionicons name="cafe-outline" size={64} color="#64748b" />
             <Text style={styles.emptyTitle}>Bu Gün Ders Yok!</Text>
             <Text style={styles.emptySubtitle}>
-              Seçtiğiniz dersler {selectedDay} günü yok.
+              {selectedDay} günü dersiniz bulunmuyor.
             </Text>
           </View>
         ) : (
-          /* Dersler gösteriliyor */
-          todayCourses.map((course, index) => (
+          /* Show courses */
+          todayCourses.map((schedule, index) => (
             <TouchableOpacity
-              key={course.id}
+              key={schedule.id}
               style={styles.courseCard}
               activeOpacity={0.8}
             >
               <View
-                style={[styles.courseAccent, { backgroundColor: course.color }]}
+                style={[styles.courseAccent, { backgroundColor: getCourseColor(index) }]}
               />
               <View style={styles.courseContent}>
                 <View style={styles.courseHeader}>
-                  <Text style={styles.courseCode}>{course.code}</Text>
+                  <Text style={styles.courseCode}>{schedule.course_code}</Text>
                   <View style={styles.timeContainer}>
                     <Ionicons name="time-outline" size={14} color="#94a3b8" />
                     <Text style={styles.courseTime}>
-                      {course.startTime} - {course.endTime}
+                      {schedule.start_time} - {schedule.end_time}
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.courseName}>{course.name}</Text>
+                <Text style={styles.courseName}>{schedule.course_name}</Text>
                 <View style={styles.courseDetails}>
                   <View style={styles.detailItem}>
                     <Ionicons name="person-outline" size={14} color="#64748b" />
-                    <Text style={styles.detailText}>{course.instructor}</Text>
+                    <Text style={styles.detailText}>{schedule.instructor}</Text>
                   </View>
                   <View style={styles.detailItem}>
                     <Ionicons name="location-outline" size={14} color="#64748b" />
-                    <Text style={styles.detailText}>{course.room}</Text>
+                    <Text style={styles.detailText}>{schedule.classroom} • {schedule.faculty}</Text>
                   </View>
                 </View>
               </View>
@@ -210,35 +298,62 @@ export default function ScheduleScreen() {
           ))
         )}
 
-        {/* Quick Stats - Sadece ders seçildiyse göster */}
-        {totalSelected > 0 && (
+        {/* Quick Stats - Show only if courses selected */}
+        {totalCourses > 0 && (
           <View style={styles.statsContainer}>
             <Text style={styles.statsTitle}>Haftalık Özet</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <Ionicons name="book-outline" size={24} color="#667eea" />
-                <Text style={styles.statNumber}>
-                  {days.reduce((acc, day) => acc + getFilteredSchedule(day).length, 0)}
-                </Text>
+                <Text style={styles.statNumber}>{totalCourses}</Text>
                 <Text style={styles.statLabel}>Toplam Ders</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons name="time-outline" size={24} color="#4ECDC4" />
-                <Text style={styles.statNumber}>
-                  {totalSelected * 3}
-                </Text>
-                <Text style={styles.statLabel}>Saat/Hafta</Text>
+                <Ionicons name="ribbon-outline" size={24} color="#4ECDC4" />
+                <Text style={styles.statNumber}>{totalCredits}</Text>
+                <Text style={styles.statLabel}>Kredi</Text>
               </View>
               <View style={styles.statCard}>
                 <Ionicons name="calendar-outline" size={24} color="#FF6B6B" />
                 <Text style={styles.statNumber}>
-                  {days.filter(day => getFilteredSchedule(day).length > 0).length}
+                  {days.filter(day => getCoursesCountForDay(day) > 0).length}
                 </Text>
                 <Text style={styles.statLabel}>Aktif Gün</Text>
               </View>
             </View>
           </View>
         )}
+
+        {/* Quick Actions */}
+        <View style={styles.actionsContainer}>
+          <Text style={styles.statsTitle}>Hızlı Erişim</Text>
+          <View style={styles.actionsGrid}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/course-selection')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(102, 126, 234, 0.15)' }]}>
+                <Ionicons name="school" size={24} color="#667eea" />
+              </View>
+              <Text style={styles.actionText}>Ders Seçimi</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/academic-calendar')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(78, 205, 196, 0.15)' }]}>
+                <Ionicons name="calendar" size={24} color="#4ECDC4" />
+              </View>
+              <Text style={styles.actionText}>Akademik Takvim</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionCard}>
+              <View style={[styles.actionIcon, { backgroundColor: 'rgba(255, 107, 107, 0.15)' }]}>
+                <Ionicons name="document-text" size={24} color="#FF6B6B" />
+              </View>
+              <Text style={styles.actionText}>Sınavlarım</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -249,9 +364,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f172a',
   },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#94a3b8',
+    marginTop: 12,
+    fontSize: 14,
+  },
   header: {
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 20,
     paddingHorizontal: 20,
   },
   headerContent: {
@@ -282,22 +408,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#ef4444',
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
+  gpaContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
   },
-  badgeText: {
-    color: '#fff',
-    fontSize: 10,
+  gpaItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  gpaLabel: {
+    fontSize: 12,
+    color: '#94a3b8',
+    marginBottom: 4,
+  },
+  gpaValue: {
+    fontSize: 20,
     fontWeight: '700',
+    color: '#667eea',
+  },
+  gpaDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: 16,
   },
   filterInfo: {
     flexDirection: 'row',
@@ -523,6 +658,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     marginTop: 4,
+    textAlign: 'center',
+  },
+  actionsContainer: {
+    marginTop: 24,
+  },
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionText: {
+    fontSize: 11,
+    color: '#94a3b8',
     textAlign: 'center',
   },
 });
