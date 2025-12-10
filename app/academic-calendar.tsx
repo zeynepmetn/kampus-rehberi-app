@@ -1,9 +1,13 @@
+import { useDatabase } from '@/context/DatabaseContext';
+import { AcademicCalendar, getAcademicCalendar } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,167 +16,6 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-
-// Akademik Takvim Verileri
-const academicEvents = [
-  {
-    id: '1',
-    title: 'Güz Dönemi Başlangıcı',
-    date: new Date(2024, 8, 16), // 16 Eylül 2024
-    type: 'semester',
-    description: 'Güz dönemi derslerinin başlangıcı',
-    icon: 'school-outline',
-  },
-  {
-    id: '2',
-    title: 'Ders Ekleme/Bırakma',
-    date: new Date(2024, 8, 23), // 23 Eylül 2024
-    endDate: new Date(2024, 8, 27), // 27 Eylül 2024
-    type: 'registration',
-    description: 'Son ders ekleme ve bırakma tarihleri',
-    icon: 'create-outline',
-  },
-  {
-    id: '3',
-    title: 'Cumhuriyet Bayramı',
-    date: new Date(2024, 9, 29), // 29 Ekim 2024
-    type: 'holiday',
-    description: 'Resmi tatil - Dersler yapılmayacak',
-    icon: 'flag-outline',
-  },
-  {
-    id: '4',
-    title: 'Vize Haftası Başlangıcı',
-    date: new Date(2024, 10, 4), // 4 Kasım 2024
-    endDate: new Date(2024, 10, 15), // 15 Kasım 2024
-    type: 'exam',
-    description: 'Ara sınav haftası',
-    icon: 'document-text-outline',
-  },
-  {
-    id: '5',
-    title: 'Veri Yapıları Vize',
-    date: new Date(2024, 10, 6), // 6 Kasım 2024
-    type: 'course_exam',
-    description: 'BIL201 - Saat: 10:00 - Yer: A-301',
-    icon: 'clipboard-outline',
-    course: 'BIL201',
-  },
-  {
-    id: '6',
-    title: 'Algoritma Analizi Vize',
-    date: new Date(2024, 10, 8), // 8 Kasım 2024
-    type: 'course_exam',
-    description: 'BIL203 - Saat: 14:00 - Yer: B-102',
-    icon: 'clipboard-outline',
-    course: 'BIL203',
-  },
-  {
-    id: '7',
-    title: 'Veritabanı Sistemleri Vize',
-    date: new Date(2024, 10, 11), // 11 Kasım 2024
-    type: 'course_exam',
-    description: 'BIL205 - Saat: 10:00 - Yer: LAB-1',
-    icon: 'clipboard-outline',
-    course: 'BIL205',
-  },
-  {
-    id: '8',
-    title: 'Lineer Cebir Vize',
-    date: new Date(2024, 10, 13), // 13 Kasım 2024
-    type: 'course_exam',
-    description: 'MAT201 - Saat: 09:00 - Yer: C-201',
-    icon: 'clipboard-outline',
-    course: 'MAT201',
-  },
-  {
-    id: '9',
-    title: 'Ders Çekilme Son Tarihi',
-    date: new Date(2024, 10, 22), // 22 Kasım 2024
-    type: 'deadline',
-    description: 'Dersten çekilme için son gün',
-    icon: 'warning-outline',
-  },
-  {
-    id: '10',
-    title: 'Güz Dönemi Dersleri Bitişi',
-    date: new Date(2024, 11, 27), // 27 Aralık 2024
-    type: 'semester',
-    description: 'Güz dönemi derslerinin son günü',
-    icon: 'school-outline',
-  },
-  {
-    id: '11',
-    title: 'Final Haftası Başlangıcı',
-    date: new Date(2025, 0, 6), // 6 Ocak 2025
-    endDate: new Date(2025, 0, 17), // 17 Ocak 2025
-    type: 'exam',
-    description: 'Final sınav haftası',
-    icon: 'document-text-outline',
-  },
-  {
-    id: '12',
-    title: 'Veri Yapıları Final',
-    date: new Date(2025, 0, 7), // 7 Ocak 2025
-    type: 'course_exam',
-    description: 'BIL201 - Saat: 10:00 - Yer: Spor Salonu',
-    icon: 'clipboard-outline',
-    course: 'BIL201',
-  },
-  {
-    id: '13',
-    title: 'Algoritma Analizi Final',
-    date: new Date(2025, 0, 9), // 9 Ocak 2025
-    type: 'course_exam',
-    description: 'BIL203 - Saat: 14:00 - Yer: Spor Salonu',
-    icon: 'clipboard-outline',
-    course: 'BIL203',
-  },
-  {
-    id: '14',
-    title: 'Veritabanı Sistemleri Final',
-    date: new Date(2025, 0, 13), // 13 Ocak 2025
-    type: 'course_exam',
-    description: 'BIL205 - Saat: 10:00 - Yer: A Blok',
-    icon: 'clipboard-outline',
-    course: 'BIL205',
-  },
-  {
-    id: '15',
-    title: 'Lineer Cebir Final',
-    date: new Date(2025, 0, 15), // 15 Ocak 2025
-    type: 'course_exam',
-    description: 'MAT201 - Saat: 09:00 - Yer: C Blok',
-    icon: 'clipboard-outline',
-    course: 'MAT201',
-  },
-  {
-    id: '16',
-    title: 'Yarıyıl Tatili',
-    date: new Date(2025, 0, 20), // 20 Ocak 2025
-    endDate: new Date(2025, 1, 7), // 7 Şubat 2025
-    type: 'holiday',
-    description: 'Yarıyıl tatili',
-    icon: 'sunny-outline',
-  },
-  {
-    id: '17',
-    title: 'Bahar Dönemi Başlangıcı',
-    date: new Date(2025, 1, 10), // 10 Şubat 2025
-    type: 'semester',
-    description: 'Bahar dönemi derslerinin başlangıcı',
-    icon: 'school-outline',
-  },
-  {
-    id: '18',
-    title: 'Bütünleme Sınavları',
-    date: new Date(2025, 0, 27), // 27 Ocak 2025
-    endDate: new Date(2025, 1, 5), // 5 Şubat 2025
-    type: 'exam',
-    description: 'Bütünleme sınav haftası',
-    icon: 'refresh-outline',
-  },
-];
 
 const eventTypes = [
   { key: 'all', label: 'Tümü', color: '#667eea' },
@@ -219,16 +62,56 @@ const getDaysUntil = (date: Date) => {
 };
 
 export default function AcademicCalendarScreen() {
+  const { isReady } = useDatabase();
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [academicEvents, setAcademicEvents] = useState<AcademicCalendar[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadData = async () => {
+    if (!isReady) return;
+
+    try {
+      setIsLoading(true);
+      const events = await getAcademicCalendar();
+      setAcademicEvents(events);
+    } catch (error) {
+      console.error('Error loading academic calendar:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [isReady]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadData();
+    setIsRefreshing(false);
+  };
+
+  // Convert database events to display format
+  const formattedEvents = academicEvents.map((event) => ({
+    id: event.id!.toString(),
+    title: event.title,
+    date: new Date(event.event_date),
+    endDate: event.end_date ? new Date(event.end_date) : undefined,
+    type: event.event_type,
+    description: event.description || '',
+    icon: (event.icon || 'calendar-outline') as any,
+    course: event.course_code,
+  }));
 
   const filteredEvents = selectedFilter === 'all'
-    ? academicEvents
-    : academicEvents.filter(event => event.type === selectedFilter);
+    ? formattedEvents
+    : formattedEvents.filter(event => event.type === selectedFilter);
 
   const sortedEvents = [...filteredEvents].sort((a, b) => a.date.getTime() - b.date.getTime());
 
   // Yaklaşan etkinlikler (30 gün içinde)
-  const upcomingEvents = academicEvents
+  const upcomingEvents = formattedEvents
     .filter(event => {
       const daysUntil = getDaysUntil(event.date);
       return daysUntil >= 0 && daysUntil <= 30;
@@ -257,11 +140,19 @@ export default function AcademicCalendarScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#667eea" />
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          }
+        >
         {/* Yaklaşan Etkinlikler */}
         {upcomingEvents.length > 0 && (
           <View style={styles.upcomingSection}>
@@ -411,6 +302,7 @@ export default function AcademicCalendarScreen() {
           </View>
         </View>
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -456,6 +348,11 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

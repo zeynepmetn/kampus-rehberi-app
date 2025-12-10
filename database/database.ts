@@ -4,7 +4,7 @@ import * as SQLite from 'expo-sqlite';
 let db: SQLite.SQLiteDatabase | null = null;
 
 // Database version - increment this when schema changes
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // Initialize database
 export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
@@ -24,6 +24,12 @@ export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
     
     // Drop all old tables to reset schema
     await db.execAsync(`
+      DROP TABLE IF EXISTS announcement_likes;
+      DROP TABLE IF EXISTS announcement_comments;
+      DROP TABLE IF EXISTS announcements;
+      DROP TABLE IF EXISTS cafeteria_snacks;
+      DROP TABLE IF EXISTS cafeteria_menu;
+      DROP TABLE IF EXISTS academic_calendar;
       DROP TABLE IF EXISTS favorites;
       DROP TABLE IF EXISTS notifications;
       DROP TABLE IF EXISTS settings;
@@ -235,6 +241,75 @@ const createTables = async () => {
       location TEXT,
       event_date DATETIME NOT NULL,
       organizer TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Cafeteria Menu table (Yemekhane Günlük Menü)
+    CREATE TABLE IF NOT EXISTS cafeteria_menu (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      price REAL NOT NULL,
+      category TEXT NOT NULL,
+      available INTEGER DEFAULT 1,
+      menu_date DATE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Cafeteria Snacks table (Aperatifler)
+    CREATE TABLE IF NOT EXISTS cafeteria_snacks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      price REAL NOT NULL,
+      category TEXT,
+      available INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Announcements table (Duyurular)
+    CREATE TABLE IF NOT EXISTS announcements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Announcement Comments table (Duyuru Yorumları)
+    CREATE TABLE IF NOT EXISTS announcement_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      announcement_id INTEGER NOT NULL,
+      student_id INTEGER,
+      user_name TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (announcement_id) REFERENCES announcements(id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE SET NULL
+    );
+
+    -- Announcement Likes table (Duyuru Beğenileri)
+    CREATE TABLE IF NOT EXISTS announcement_likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      announcement_id INTEGER NOT NULL,
+      student_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (announcement_id) REFERENCES announcements(id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+      UNIQUE(announcement_id, student_id)
+    );
+
+    -- Academic Calendar table (Akademik Takvim)
+    CREATE TABLE IF NOT EXISTS academic_calendar (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      event_date DATE NOT NULL,
+      end_date DATE,
+      event_type TEXT NOT NULL,
+      icon TEXT,
+      course_code TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -1334,10 +1409,442 @@ export const getUpcomingEvents = async (): Promise<Event[]> => {
   );
 };
 
+export const updateEvent = async (id: number, event: Partial<Event>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (event.title !== undefined) {
+    updates.push('title = ?');
+    values.push(event.title);
+  }
+  if (event.description !== undefined) {
+    updates.push('description = ?');
+    values.push(event.description);
+  }
+  if (event.location !== undefined) {
+    updates.push('location = ?');
+    values.push(event.location);
+  }
+  if (event.event_date !== undefined) {
+    updates.push('event_date = ?');
+    values.push(event.event_date);
+  }
+  if (event.organizer !== undefined) {
+    updates.push('organizer = ?');
+    values.push(event.organizer);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(`UPDATE events SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
 export const deleteEvent = async (id: number): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
   await db.runAsync('DELETE FROM events WHERE id = ?', [id]);
+};
+
+// ==================== CAFETERIA MENU OPERATIONS ====================
+
+export interface CafeteriaMenu {
+  id?: number;
+  name: string;
+  description?: string;
+  price: number;
+  category: string; // 'main', 'side', 'dessert', 'drink'
+  available?: number;
+  menu_date: string; // YYYY-MM-DD
+  created_at?: string;
+}
+
+export const createCafeteriaMenu = async (menu: CafeteriaMenu): Promise<number> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.runAsync(
+    'INSERT INTO cafeteria_menu (name, description, price, category, available, menu_date) VALUES (?, ?, ?, ?, ?, ?)',
+    [menu.name, menu.description || null, menu.price, menu.category, menu.available ?? 1, menu.menu_date]
+  );
+
+  return result.lastInsertRowId;
+};
+
+export const getCafeteriaMenuByDate = async (date: string): Promise<CafeteriaMenu[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<CafeteriaMenu>(
+    'SELECT * FROM cafeteria_menu WHERE menu_date = ? ORDER BY category, name',
+    [date]
+  );
+};
+
+export const getTodayCafeteriaMenu = async (): Promise<CafeteriaMenu[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const today = new Date().toISOString().split('T')[0];
+  return getCafeteriaMenuByDate(today);
+};
+
+export const updateCafeteriaMenu = async (id: number, menu: Partial<CafeteriaMenu>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (menu.name !== undefined) {
+    updates.push('name = ?');
+    values.push(menu.name);
+  }
+  if (menu.description !== undefined) {
+    updates.push('description = ?');
+    values.push(menu.description);
+  }
+  if (menu.price !== undefined) {
+    updates.push('price = ?');
+    values.push(menu.price);
+  }
+  if (menu.category !== undefined) {
+    updates.push('category = ?');
+    values.push(menu.category);
+  }
+  if (menu.available !== undefined) {
+    updates.push('available = ?');
+    values.push(menu.available);
+  }
+  if (menu.menu_date !== undefined) {
+    updates.push('menu_date = ?');
+    values.push(menu.menu_date);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(`UPDATE cafeteria_menu SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
+export const deleteCafeteriaMenu = async (id: number): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  await db.runAsync('DELETE FROM cafeteria_menu WHERE id = ?', [id]);
+};
+
+// ==================== CAFETERIA SNACKS OPERATIONS ====================
+
+export interface CafeteriaSnack {
+  id?: number;
+  name: string;
+  description?: string;
+  price: number;
+  category?: string;
+  available?: number;
+  created_at?: string;
+}
+
+export const createCafeteriaSnack = async (snack: CafeteriaSnack): Promise<number> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.runAsync(
+    'INSERT INTO cafeteria_snacks (name, description, price, category, available) VALUES (?, ?, ?, ?, ?)',
+    [snack.name, snack.description || null, snack.price, snack.category || null, snack.available ?? 1]
+  );
+
+  return result.lastInsertRowId;
+};
+
+export const getCafeteriaSnacks = async (): Promise<CafeteriaSnack[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<CafeteriaSnack>(
+    'SELECT * FROM cafeteria_snacks WHERE available = 1 ORDER BY category, name'
+  );
+};
+
+export const updateCafeteriaSnack = async (id: number, snack: Partial<CafeteriaSnack>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (snack.name !== undefined) {
+    updates.push('name = ?');
+    values.push(snack.name);
+  }
+  if (snack.description !== undefined) {
+    updates.push('description = ?');
+    values.push(snack.description);
+  }
+  if (snack.price !== undefined) {
+    updates.push('price = ?');
+    values.push(snack.price);
+  }
+  if (snack.category !== undefined) {
+    updates.push('category = ?');
+    values.push(snack.category);
+  }
+  if (snack.available !== undefined) {
+    updates.push('available = ?');
+    values.push(snack.available);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(`UPDATE cafeteria_snacks SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
+export const deleteCafeteriaSnack = async (id: number): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  await db.runAsync('DELETE FROM cafeteria_snacks WHERE id = ?', [id]);
+};
+
+// ==================== ANNOUNCEMENT OPERATIONS ====================
+
+export interface Announcement {
+  id?: number;
+  owner: string;
+  title: string;
+  description: string;
+  created_at?: string;
+  updated_at?: string;
+  // Joined fields
+  likes_count?: number;
+  comments_count?: number;
+  is_liked?: number;
+}
+
+export const createAnnouncement = async (announcement: Announcement): Promise<number> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.runAsync(
+    'INSERT INTO announcements (owner, title, description) VALUES (?, ?, ?)',
+    [announcement.owner, announcement.title, announcement.description]
+  );
+
+  return result.lastInsertRowId;
+};
+
+export const getAnnouncements = async (studentId?: number): Promise<Announcement[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const announcements = await db.getAllAsync<Announcement>(
+    `SELECT a.*,
+      (SELECT COUNT(*) FROM announcement_likes WHERE announcement_id = a.id) as likes_count,
+      (SELECT COUNT(*) FROM announcement_comments WHERE announcement_id = a.id) as comments_count,
+      ${studentId ? `(SELECT COUNT(*) FROM announcement_likes WHERE announcement_id = a.id AND student_id = ?) as is_liked` : '0 as is_liked'}
+    FROM announcements a
+    ORDER BY a.created_at DESC`,
+    studentId ? [studentId] : []
+  );
+
+  return announcements;
+};
+
+export const getAnnouncementById = async (id: number, studentId?: number): Promise<Announcement | null> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getFirstAsync<Announcement>(
+    `SELECT a.*,
+      (SELECT COUNT(*) FROM announcement_likes WHERE announcement_id = a.id) as likes_count,
+      (SELECT COUNT(*) FROM announcement_comments WHERE announcement_id = a.id) as comments_count,
+      ${studentId ? `(SELECT COUNT(*) FROM announcement_likes WHERE announcement_id = a.id AND student_id = ?) as is_liked` : '0 as is_liked'}
+    FROM announcements a
+    WHERE a.id = ?`,
+    studentId ? [studentId, id] : [id]
+  );
+};
+
+export const updateAnnouncement = async (id: number, announcement: Partial<Announcement>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = ['updated_at = CURRENT_TIMESTAMP'];
+  const values: any[] = [];
+
+  if (announcement.owner !== undefined) {
+    updates.push('owner = ?');
+    values.push(announcement.owner);
+  }
+  if (announcement.title !== undefined) {
+    updates.push('title = ?');
+    values.push(announcement.title);
+  }
+  if (announcement.description !== undefined) {
+    updates.push('description = ?');
+    values.push(announcement.description);
+  }
+
+  if (updates.length === 1) return; // Only updated_at
+
+  values.push(id);
+  await db.runAsync(`UPDATE announcements SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
+export const deleteAnnouncement = async (id: number): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  await db.runAsync('DELETE FROM announcements WHERE id = ?', [id]);
+};
+
+// ==================== ANNOUNCEMENT COMMENT OPERATIONS ====================
+
+export interface AnnouncementComment {
+  id?: number;
+  announcement_id: number;
+  student_id?: number;
+  user_name: string;
+  content: string;
+  created_at?: string;
+}
+
+export const createAnnouncementComment = async (comment: AnnouncementComment): Promise<number> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.runAsync(
+    'INSERT INTO announcement_comments (announcement_id, student_id, user_name, content) VALUES (?, ?, ?, ?)',
+    [comment.announcement_id, comment.student_id || null, comment.user_name, comment.content]
+  );
+
+  return result.lastInsertRowId;
+};
+
+export const getAnnouncementComments = async (announcementId: number): Promise<AnnouncementComment[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<AnnouncementComment>(
+    'SELECT * FROM announcement_comments WHERE announcement_id = ? ORDER BY created_at ASC',
+    [announcementId]
+  );
+};
+
+export const deleteAnnouncementComment = async (id: number): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  await db.runAsync('DELETE FROM announcement_comments WHERE id = ?', [id]);
+};
+
+// ==================== ANNOUNCEMENT LIKE OPERATIONS ====================
+
+export const toggleAnnouncementLike = async (announcementId: number, studentId: number): Promise<boolean> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const existing = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM announcement_likes WHERE announcement_id = ? AND student_id = ?',
+    [announcementId, studentId]
+  );
+
+  if (existing) {
+    await db.runAsync(
+      'DELETE FROM announcement_likes WHERE announcement_id = ? AND student_id = ?',
+      [announcementId, studentId]
+    );
+    return false; // Unliked
+  } else {
+    await db.runAsync(
+      'INSERT INTO announcement_likes (announcement_id, student_id) VALUES (?, ?)',
+      [announcementId, studentId]
+    );
+    return true; // Liked
+  }
+};
+
+// ==================== ACADEMIC CALENDAR OPERATIONS ====================
+
+export interface AcademicCalendar {
+  id?: number;
+  title: string;
+  description?: string;
+  event_date: string; // YYYY-MM-DD
+  end_date?: string; // YYYY-MM-DD
+  event_type: string; // 'semester', 'exam', 'holiday', 'deadline', 'registration', 'course_exam'
+  icon?: string;
+  course_code?: string;
+  created_at?: string;
+}
+
+export const createAcademicCalendar = async (calendar: AcademicCalendar): Promise<number> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const result = await db.runAsync(
+    'INSERT INTO academic_calendar (title, description, event_date, end_date, event_type, icon, course_code) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [
+      calendar.title,
+      calendar.description || null,
+      calendar.event_date,
+      calendar.end_date || null,
+      calendar.event_type,
+      calendar.icon || null,
+      calendar.course_code || null,
+    ]
+  );
+
+  return result.lastInsertRowId;
+};
+
+export const getAcademicCalendar = async (): Promise<AcademicCalendar[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<AcademicCalendar>(
+    'SELECT * FROM academic_calendar ORDER BY event_date ASC'
+  );
+};
+
+export const getAcademicCalendarByType = async (type: string): Promise<AcademicCalendar[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<AcademicCalendar>(
+    'SELECT * FROM academic_calendar WHERE event_type = ? ORDER BY event_date ASC',
+    [type]
+  );
+};
+
+export const updateAcademicCalendar = async (id: number, calendar: Partial<AcademicCalendar>): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const updates: string[] = [];
+  const values: any[] = [];
+
+  if (calendar.title !== undefined) {
+    updates.push('title = ?');
+    values.push(calendar.title);
+  }
+  if (calendar.description !== undefined) {
+    updates.push('description = ?');
+    values.push(calendar.description);
+  }
+  if (calendar.event_date !== undefined) {
+    updates.push('event_date = ?');
+    values.push(calendar.event_date);
+  }
+  if (calendar.end_date !== undefined) {
+    updates.push('end_date = ?');
+    values.push(calendar.end_date);
+  }
+  if (calendar.event_type !== undefined) {
+    updates.push('event_type = ?');
+    values.push(calendar.event_type);
+  }
+  if (calendar.icon !== undefined) {
+    updates.push('icon = ?');
+    values.push(calendar.icon);
+  }
+  if (calendar.course_code !== undefined) {
+    updates.push('course_code = ?');
+    values.push(calendar.course_code);
+  }
+
+  if (updates.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(`UPDATE academic_calendar SET ${updates.join(', ')} WHERE id = ?`, values);
+};
+
+export const deleteAcademicCalendar = async (id: number): Promise<void> => {
+  if (!db) throw new Error('Database not initialized');
+
+  await db.runAsync('DELETE FROM academic_calendar WHERE id = ?', [id]);
 };
 
 // ==================== SEED DATA ====================

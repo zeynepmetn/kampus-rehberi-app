@@ -1,190 +1,165 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { CafeteriaPost, MenuItem, Comment } from '@/types';
+import {
+  CafeteriaSnack,
+  createAnnouncementComment,
+  deleteAnnouncementComment,
+  Event,
+  getAnnouncementComments,
+  getAnnouncements,
+  getCafeteriaSnacks,
+  getEvents,
+  getTodayCafeteriaMenu,
+  toggleAnnouncementLike
+} from '@/database/database';
+import { CafeteriaPost, Comment, MenuItem } from '@/types';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
+import { useDatabase } from './DatabaseContext';
 
 interface CafeteriaContextType {
   posts: CafeteriaPost[];
   menuItems: MenuItem[];
+  snacks: CafeteriaSnack[];
+  events: Event[];
+  isLoading: boolean;
+  refreshData: () => Promise<void>;
   toggleLike: (postId: string) => void;
   addComment: (postId: string, userName: string, content: string) => void;
   deleteComment: (postId: string, commentId: string) => void;
 }
 
-// Mock menu items
-const initialMenuItems: MenuItem[] = [
-  {
-    id: 'm1',
-    name: 'Mercimek Çorbası',
-    description: 'Geleneksel Türk mercimek çorbası',
-    price: 15,
-    category: 'main',
-    available: true,
-  },
-  {
-    id: 'm2',
-    name: 'Tavuk Sote',
-    description: 'Sebzeli tavuk sote, pilav ile servis edilir',
-    price: 45,
-    category: 'main',
-    available: true,
-  },
-  {
-    id: 'm3',
-    name: 'Karnıyarık',
-    description: 'Kıymalı patlıcan dolması',
-    price: 50,
-    category: 'main',
-    available: true,
-  },
-  {
-    id: 'm4',
-    name: 'Pilav',
-    description: 'Tereyağlı pirinç pilavı',
-    price: 12,
-    category: 'side',
-    available: true,
-  },
-  {
-    id: 'm5',
-    name: 'Sütlaç',
-    description: 'Geleneksel fırın sütlaç',
-    price: 20,
-    category: 'dessert',
-    available: true,
-  },
-  {
-    id: 'm6',
-    name: 'Ayran',
-    description: 'Taze köpüklü ayran',
-    price: 8,
-    category: 'drink',
-    available: true,
-  },
-];
-
-// Mock cafeteria posts
-const initialPosts: CafeteriaPost[] = [
-  {
-    id: 'p1',
-    title: '🍕 İtalyan Haftası Başladı!',
-    content: 'Bu hafta yemekhanede İtalyan mutfağından lezzetler sizlerle! Pizza, makarna ve tiramisu günlük menümüzde. Kaçırmayın!',
-    date: new Date(Date.now() - 3600000),
-    likes: 47,
-    comments: [
-      {
-        id: 'c1',
-        userId: 'u1',
-        userName: 'Ahmet Yılmaz',
-        content: 'Pizza çok güzeldi, kesinlikle tavsiye ederim! 🍕',
-        timestamp: new Date(Date.now() - 1800000),
-      },
-      {
-        id: 'c2',
-        userId: 'u2',
-        userName: 'Ayşe Demir',
-        content: 'Tiramisu için uzun kuyruk var ama değer!',
-        timestamp: new Date(Date.now() - 900000),
-      },
-    ],
-    isLiked: false,
-  },
-  {
-    id: 'p2',
-    title: '🥗 Sağlıklı Yaşam Menüsü',
-    content: 'Fit menümüz artık her gün mevcut! Düşük kalorili, yüksek proteinli seçenekler için 2. kata bekleriz.',
-    date: new Date(Date.now() - 86400000),
-    likes: 32,
-    comments: [
-      {
-        id: 'c3',
-        userId: 'u3',
-        userName: 'Mehmet Can',
-        content: 'Sonunda! Spor sonrası için harika olacak.',
-        timestamp: new Date(Date.now() - 43200000),
-      },
-    ],
-    isLiked: true,
-  },
-  {
-    id: 'p3',
-    title: '☕ Kahve Köşesi Açıldı',
-    content: 'Yemekhanemizin girişinde yeni kahve köşemiz hizmetinizde! Americano, Latte, Cappuccino ve daha fazlası öğrenci fiyatlarıyla.',
-    date: new Date(Date.now() - 172800000),
-    likes: 89,
-    comments: [],
-    isLiked: false,
-  },
-  {
-    id: 'p4',
-    title: '🎉 Mezuniyet Özel Menüsü',
-    content: 'Mezuniyet haftasına özel olarak menümüzde şef tavsiyesi yemekler ve ücretsiz tatlı kampanyamız başladı!',
-    date: new Date(Date.now() - 259200000),
-    likes: 156,
-    comments: [
-      {
-        id: 'c4',
-        userId: 'u4',
-        userName: 'Zeynep Kaya',
-        content: 'En güzel haber bu oldu! ❤️',
-        timestamp: new Date(Date.now() - 216000000),
-      },
-    ],
-    isLiked: true,
-  },
-];
-
 const CafeteriaContext = createContext<CafeteriaContextType | undefined>(undefined);
 
 export function CafeteriaProvider({ children }: { children: ReactNode }) {
-  const [posts, setPosts] = useState<CafeteriaPost[]>(initialPosts);
-  const [menuItems] = useState<MenuItem[]>(initialMenuItems);
+  const { isReady } = useDatabase();
+  const { student } = useAuth();
+  const [posts, setPosts] = useState<CafeteriaPost[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [snacks, setSnacks] = useState<CafeteriaSnack[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleLike = useCallback((postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              isLiked: !post.isLiked,
-              likes: post.isLiked ? post.likes - 1 : post.likes + 1,
-            }
-          : post
-      )
-    );
-  }, []);
+  const loadData = useCallback(async () => {
+    if (!isReady) return;
 
-  const addComment = useCallback((postId: string, userName: string, content: string) => {
-    const newComment: Comment = {
-      id: `comment-${Date.now()}`,
-      userId: `user-${Date.now()}`,
-      userName,
-      content,
-      timestamp: new Date(),
-    };
+    try {
+      setIsLoading(true);
 
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? { ...post, comments: [...post.comments, newComment] }
-          : post
-      )
-    );
-  }, []);
+      // Load menu
+      const menu = await getTodayCafeteriaMenu();
+      const formattedMenu: MenuItem[] = menu.map((item) => ({
+        id: item.id!.toString(),
+        name: item.name,
+        description: item.description || '',
+        price: item.price,
+        category: item.category as 'main' | 'side' | 'dessert' | 'drink',
+        available: item.available === 1,
+      }));
+      setMenuItems(formattedMenu);
 
-  const deleteComment = useCallback((postId: string, commentId: string) => {
-    setPosts((prev) =>
-      prev.map((post) =>
-        post.id === postId
-          ? { ...post, comments: post.comments.filter((c) => c.id !== commentId) }
-          : post
-      )
-    );
-  }, []);
+      // Load snacks
+      const snacksData = await getCafeteriaSnacks();
+      setSnacks(snacksData);
+
+      // Load announcements
+      const announcements = await getAnnouncements(student?.id);
+      const formattedPosts: CafeteriaPost[] = await Promise.all(
+        announcements.map(async (ann) => {
+          const comments = await getAnnouncementComments(ann.id!);
+          const formattedComments: Comment[] = comments.map((c) => ({
+            id: c.id!.toString(),
+            userId: c.student_id?.toString() || '',
+            userName: c.user_name,
+            content: c.content,
+            timestamp: new Date(c.created_at!),
+          }));
+
+          return {
+            id: ann.id!.toString(),
+            title: ann.title,
+            content: ann.description,
+            date: new Date(ann.created_at!),
+            likes: ann.likes_count || 0,
+            comments: formattedComments,
+            isLiked: (ann.is_liked || 0) === 1,
+          };
+        })
+      );
+      setPosts(formattedPosts);
+
+      // Load events
+      const eventsData = await getEvents();
+      setEvents(eventsData);
+    } catch (error) {
+      console.error('Error loading cafeteria data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isReady, student?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const refreshData = useCallback(async () => {
+    await loadData();
+  }, [loadData]);
+
+  const toggleLike = useCallback(
+    async (postId: string) => {
+      if (!student?.id) return;
+
+      try {
+        const announcementId = parseInt(postId);
+        await toggleAnnouncementLike(announcementId, student.id);
+        await loadData(); // Reload to get updated like count
+      } catch (error) {
+        console.error('Error toggling like:', error);
+      }
+    },
+    [student?.id, loadData]
+  );
+
+  const addComment = useCallback(
+    async (postId: string, userName: string, content: string) => {
+      if (!student?.id) return;
+
+      try {
+        const announcementId = parseInt(postId);
+        await createAnnouncementComment({
+          announcement_id: announcementId,
+          student_id: student.id,
+          user_name: userName,
+          content: content.trim(),
+        });
+        await loadData(); // Reload to get updated comments
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    },
+    [student?.id, loadData]
+  );
+
+  const deleteComment = useCallback(
+    async (postId: string, commentId: string) => {
+      try {
+        await deleteAnnouncementComment(parseInt(commentId));
+        await loadData(); // Reload to get updated comments
+      } catch (error) {
+        console.error('Error deleting comment:', error);
+      }
+    },
+    [loadData]
+  );
 
   return (
     <CafeteriaContext.Provider
       value={{
         posts,
         menuItems,
+        snacks,
+        events,
+        isLoading,
+        refreshData,
         toggleLike,
         addComment,
         deleteComment,
@@ -202,4 +177,3 @@ export function useCafeteria() {
   }
   return context;
 }
-

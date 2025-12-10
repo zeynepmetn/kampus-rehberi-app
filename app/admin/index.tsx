@@ -4,11 +4,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface AdminMenuItem {
@@ -52,6 +52,38 @@ const menuItems: AdminMenuItem[] = [
     icon: 'document-text',
     color: '#8B5CF6',
     route: '/admin/exams',
+  },
+  {
+    id: 'cafeteria',
+    title: 'Yemekhane',
+    description: 'Menü ve aperatifleri yönet',
+    icon: 'restaurant',
+    color: '#FF6B6B',
+    route: '/admin/cafeteria',
+  },
+  {
+    id: 'announcements',
+    title: 'Duyurular',
+    description: 'Duyuru ekle, düzenle, sil',
+    icon: 'megaphone',
+    color: '#F7DC6F',
+    route: '/admin/announcements',
+  },
+  {
+    id: 'events',
+    title: 'Etkinlikler',
+    description: 'Etkinlik takvimini yönet',
+    icon: 'calendar',
+    color: '#4ECDC4',
+    route: '/admin/events',
+  },
+  {
+    id: 'academic-calendar',
+    title: 'Akademik Takvim',
+    description: 'Akademik takvimi yönet',
+    icon: 'calendar-outline',
+    color: '#96CEB4',
+    route: '/admin/academic-calendar',
   },
 ];
 

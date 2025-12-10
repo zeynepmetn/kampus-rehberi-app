@@ -1,6 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
 import { useCafeteria } from '@/context/CafeteriaContext';
-import { campusEvents } from '@/data/schedule';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
@@ -20,7 +19,7 @@ type Tab = 'menu' | 'posts' | 'events';
 
 export default function CameraScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
-  const { posts, menuItems, toggleLike, addComment } = useCafeteria();
+  const { posts, menuItems, snacks, events, isLoading, refreshData, toggleLike, addComment } = useCafeteria();
   const { student } = useAuth();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
@@ -56,43 +55,80 @@ export default function CameraScreen() {
     <View style={styles.menuContainer}>
       <Text style={styles.menuTitle}>📅 Bugünün Menüsü</Text>
       
-      {['main', 'side', 'dessert', 'drink'].map((category) => {
-        const items = menuItems.filter((item) => item.category === category);
-        if (items.length === 0) return null;
-        
-        const categoryTitles: Record<string, string> = {
-          main: '🍽️ Ana Yemekler',
-          side: '🥗 Yan Lezzetler',
-          dessert: '🍰 Tatlılar',
-          drink: '🥤 İçecekler',
-        };
+      {menuItems.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="restaurant-outline" size={48} color="#64748b" />
+          <Text style={styles.emptyText}>Bugün için menü bulunmuyor</Text>
+        </View>
+      ) : (
+        <>
+          {['main', 'side', 'dessert', 'drink'].map((category) => {
+            const items = menuItems.filter((item) => item.category === category);
+            if (items.length === 0) return null;
+            
+            const categoryTitles: Record<string, string> = {
+              main: '🍽️ Ana Yemekler',
+              side: '🥗 Yan Lezzetler',
+              dessert: '🍰 Tatlılar',
+              drink: '🥤 İçecekler',
+            };
 
-        return (
-          <View key={category} style={styles.menuSection}>
-            <Text style={styles.menuSectionTitle}>{categoryTitles[category]}</Text>
-            {items.map((item) => (
-              <View key={item.id} style={styles.menuItem}>
-                <View style={styles.menuItemInfo}>
-                  <Text style={styles.menuItemName}>{item.name}</Text>
-                  <Text style={styles.menuItemDesc}>{item.description}</Text>
-                </View>
-                <View style={styles.menuItemPrice}>
-                  <Text style={styles.priceText}>₺{item.price}</Text>
-                  {item.available ? (
-                    <View style={styles.availableBadge}>
-                      <Text style={styles.availableText}>Mevcut</Text>
+            return (
+              <View key={category} style={styles.menuSection}>
+                <Text style={styles.menuSectionTitle}>{categoryTitles[category]}</Text>
+                {items.map((item) => (
+                  <View key={item.id} style={styles.menuItem}>
+                    <View style={styles.menuItemInfo}>
+                      <Text style={styles.menuItemName}>{item.name}</Text>
+                      <Text style={styles.menuItemDesc}>{item.description}</Text>
                     </View>
-                  ) : (
-                    <View style={styles.unavailableBadge}>
-                      <Text style={styles.unavailableText}>Tükendi</Text>
+                    <View style={styles.menuItemPrice}>
+                      <Text style={styles.priceText}>₺{item.price}</Text>
+                      {item.available ? (
+                        <View style={styles.availableBadge}>
+                          <Text style={styles.availableText}>Mevcut</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.unavailableBadge}>
+                          <Text style={styles.unavailableText}>Tükendi</Text>
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        );
-      })}
+            );
+          })}
+          
+          {snacks.length > 0 && (
+            <View style={styles.menuSection}>
+              <Text style={styles.menuSectionTitle}>🍿 Aperatifler</Text>
+              {snacks.map((snack) => (
+                <View key={snack.id} style={styles.menuItem}>
+                  <View style={styles.menuItemInfo}>
+                    <Text style={styles.menuItemName}>{snack.name}</Text>
+                    {snack.description && (
+                      <Text style={styles.menuItemDesc}>{snack.description}</Text>
+                    )}
+                  </View>
+                  <View style={styles.menuItemPrice}>
+                    <Text style={styles.priceText}>₺{snack.price}</Text>
+                    {snack.available === 1 ? (
+                      <View style={styles.availableBadge}>
+                        <Text style={styles.availableText}>Mevcut</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.unavailableBadge}>
+                        <Text style={styles.unavailableText}>Tükendi</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
     </View>
   );
 
@@ -171,39 +207,55 @@ export default function CameraScreen() {
 
   const renderEvents = () => (
     <View style={styles.eventsContainer}>
-      {campusEvents.map((event) => (
-        <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.8}>
-          <LinearGradient
-            colors={['rgba(102, 126, 234, 0.2)', 'rgba(118, 75, 162, 0.1)']}
-            style={styles.eventGradient}
-          >
-            <View style={styles.eventDate}>
-              <Text style={styles.eventDateDay}>
-                {event.date.getDate()}
-              </Text>
-              <Text style={styles.eventDateMonth}>
-                {event.date.toLocaleDateString('tr-TR', { month: 'short' })}
-              </Text>
-            </View>
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>{event.title}</Text>
-              <Text style={styles.eventDescription} numberOfLines={2}>
-                {event.description}
-              </Text>
-              <View style={styles.eventMeta}>
-                <View style={styles.eventMetaItem}>
-                  <Ionicons name="location-outline" size={14} color="#94a3b8" />
-                  <Text style={styles.eventMetaText}>{event.location}</Text>
+      {events.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={48} color="#64748b" />
+          <Text style={styles.emptyText}>Henüz etkinlik bulunmuyor</Text>
+        </View>
+      ) : (
+        events.map((event) => {
+          const eventDate = new Date(event.event_date);
+          return (
+            <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['rgba(102, 126, 234, 0.2)', 'rgba(118, 75, 162, 0.1)']}
+                style={styles.eventGradient}
+              >
+                <View style={styles.eventDate}>
+                  <Text style={styles.eventDateDay}>
+                    {eventDate.getDate()}
+                  </Text>
+                  <Text style={styles.eventDateMonth}>
+                    {eventDate.toLocaleDateString('tr-TR', { month: 'short' })}
+                  </Text>
                 </View>
-                <View style={styles.eventMetaItem}>
-                  <Ionicons name="people-outline" size={14} color="#94a3b8" />
-                  <Text style={styles.eventMetaText}>{event.organizer}</Text>
+                <View style={styles.eventInfo}>
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  {event.description && (
+                    <Text style={styles.eventDescription} numberOfLines={2}>
+                      {event.description}
+                    </Text>
+                  )}
+                  <View style={styles.eventMeta}>
+                    {event.location && (
+                      <View style={styles.eventMetaItem}>
+                        <Ionicons name="location-outline" size={14} color="#94a3b8" />
+                        <Text style={styles.eventMetaText}>{event.location}</Text>
+                      </View>
+                    )}
+                    {event.organizer && (
+                      <View style={styles.eventMetaItem}>
+                        <Ionicons name="people-outline" size={14} color="#94a3b8" />
+                        <Text style={styles.eventMetaText}>{event.organizer}</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      ))}
+              </LinearGradient>
+            </TouchableOpacity>
+          );
+        })
+      )}
     </View>
   );
 
@@ -592,6 +644,16 @@ const styles = StyleSheet.create({
   eventMetaText: {
     fontSize: 12,
     color: '#64748b',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#64748b',
+    marginTop: 12,
   },
 });
 
