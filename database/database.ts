@@ -361,6 +361,17 @@ export const getStudentByEmail = async (email: string): Promise<Student | null> 
   );
 };
 
+export const getAllStudents = async (): Promise<Student[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<Student>(
+    `SELECT s.*, d.name as department_name, d.code as department_code, d.faculty
+     FROM students s
+     JOIN departments d ON s.department_id = d.id
+     ORDER BY s.student_number`
+  );
+};
+
 export const updateStudent = async (id: number, student: Partial<Student>): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
@@ -557,6 +568,18 @@ export const getSchedulesByDay = async (day: string): Promise<CourseSchedule[]> 
   );
 };
 
+export const getAllSchedules = async (): Promise<CourseSchedule[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<CourseSchedule>(
+    `SELECT cs.*, c.code as course_code, c.name as course_name, c.instructor, d.name as department_name
+     FROM course_schedules cs
+     JOIN courses c ON cs.course_id = c.id
+     JOIN departments d ON c.department_id = d.id
+     ORDER BY cs.day, cs.start_time`
+  );
+};
+
 export const deleteCourseSchedule = async (id: number): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
@@ -629,6 +652,18 @@ export const getUpcomingExams = async (studentId: number): Promise<Exam[]> => {
      WHERE sc.student_id = ? AND sc.status = 'enrolled' AND e.exam_date >= date('now')
      ORDER BY e.exam_date, e.start_time`,
     [studentId]
+  );
+};
+
+export const getAllExams = async (): Promise<Exam[]> => {
+  if (!db) throw new Error('Database not initialized');
+
+  return await db.getAllAsync<Exam>(
+    `SELECT e.*, c.code as course_code, c.name as course_name, d.name as department_name
+     FROM exams e
+     JOIN courses c ON e.course_id = c.id
+     JOIN departments d ON c.department_id = d.id
+     ORDER BY e.exam_date, e.start_time`
   );
 };
 
