@@ -39,6 +39,10 @@ export default function CourseSelectionScreen() {
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
 
+  // Bulk selection
+  const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
+
   useEffect(() => {
     if (student?.id) {
       loadData();
@@ -47,7 +51,7 @@ export default function CourseSelectionScreen() {
 
   const loadData = async () => {
     if (!student?.id) return;
-    
+
     try {
       setIsLoading(true);
 
@@ -58,6 +62,9 @@ export default function CourseSelectionScreen() {
       // Load enrolled courses
       const enrolled = await getEnrolledCourses(student.id);
       setEnrolledCourses(enrolled);
+
+      // Clear selection when reloading
+      setSelectedCourseIds(new Set());
     } catch (error) {
       console.error('Error loading data:', error);
       Alert.alert('Hata', 'Veriler yüklenirken bir hata oluştu.');
@@ -73,8 +80,30 @@ export default function CourseSelectionScreen() {
   };
 
   const handleCoursePress = (course: CourseWithEligibility) => {
-    setSelectedCourse(course);
-    setShowCourseModal(true);
+    if (isBulkMode) {
+      // In bulk mode, toggle selection
+      toggleCourseSelection(course.id!);
+    } else {
+      // Normal mode, show modal
+      setSelectedCourse(course);
+      setShowCourseModal(true);
+    }
+  };
+
+  const toggleCourseSelection = (courseId: number) => {
+    const course = availableCourses.find(c => c.id === courseId);
+    if (!course) return;
+
+    // Only allow selection of eligible courses that are not already enrolled
+    if (!course.is_eligible || isEnrolled(courseId)) return;
+
+    const newSelected = new Set(selectedCourseIds);
+    if (newSelected.has(courseId)) {
+      newSelected.delete(courseId);
+    } else {
+      newSelected.add(courseId);
+    }
+    setSelectedCourseIds(newSelected);
   };
 
   const handleEnrollCourse = async () => {
@@ -91,38 +120,78 @@ export default function CourseSelectionScreen() {
         status: 'enrolled',
       });
 
-      Alert.alert('Başarılı', `"${selectedCourse.name}" dersine kayıt oldunuz.`);
+      Alert.alert('Başarılı', `"${selectedCourse.name}" dersi programa eklendi.`);
       setShowCourseModal(false);
       await loadData();
     } catch (error) {
       console.error('Error enrolling course:', error);
-      Alert.alert('Hata', 'Ders kaydı yapılırken bir hata oluştu.');
+      Alert.alert('Hata', 'Ders eklenirken bir hata oluştu.');
     } finally {
       setIsEnrolling(false);
     }
+  };
+
+  const handleBulkEnroll = async () => {
+    if (selectedCourseIds.size === 0 || !student?.id) return;
+
+    Alert.alert(
+      'Dersleri Ekle',
+      `${selectedCourseIds.size} dersi programa eklemek istediğinize emin misiniz?`,
+      [
+        { text: 'İptal', style: 'cancel' },
+        {
+          text: 'Ekle',
+          onPress: async () => {
+            try {
+              setIsEnrolling(true);
+
+              for (const courseId of selectedCourseIds) {
+                await enrollCourse({
+                  student_id: student.id!,
+                  course_id: courseId,
+                  semester: CURRENT_SEMESTER,
+                  academic_year: CURRENT_ACADEMIC_YEAR,
+                  status: 'enrolled',
+                });
+              }
+
+              Alert.alert('Başarılı', `${selectedCourseIds.size} ders programa eklendi.`);
+              setSelectedCourseIds(new Set());
+              setIsBulkMode(false);
+              await loadData();
+            } catch (error) {
+              console.error('Error bulk enrolling:', error);
+              Alert.alert('Hata', 'Dersler eklenirken bir hata oluştu.');
+            } finally {
+              setIsEnrolling(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleUnenrollCourse = async () => {
     if (!selectedCourse || !student?.id) return;
 
     Alert.alert(
-      'Ders Kaydını Sil',
-      `"${selectedCourse.name}" dersinden kaydınızı silmek istediğinize emin misiniz?`,
+      'Dersi Kaldır',
+      `"${selectedCourse.name}" dersini programdan kaldırmak istediğinize emin misiniz?`,
       [
         { text: 'İptal', style: 'cancel' },
         {
-          text: 'Sil',
+          text: 'Kaldır',
           style: 'destructive',
           onPress: async () => {
             try {
               setIsEnrolling(true);
               await unenrollCourse(student.id!, selectedCourse.id!);
-              Alert.alert('Başarılı', 'Ders kaydınız silindi.');
+              Alert.alert('Başarılı', 'Ders programdan kaldırıldı.');
               setShowCourseModal(false);
               await loadData();
             } catch (error) {
               console.error('Error unenrolling course:', error);
-              Alert.alert('Hata', 'Ders kaydı silinirken bir hata oluştu.');
+              Alert.alert('Hata', 'Ders kaldırılırken bir hata oluştu.');
             } finally {
               setIsEnrolling(false);
             }
@@ -139,7 +208,7 @@ export default function CourseSelectionScreen() {
   const filteredCourses = availableCourses.filter((course) => {
     switch (selectedFilter) {
       case 'eligible':
-        return course.is_eligible;
+        return course.is_eligible && !isEnrolled(course.id!);
       case 'enrolled':
         return isEnrolled(course.id!);
       case 'mandatory':
@@ -167,6 +236,13 @@ export default function CourseSelectionScreen() {
     return enrolledCourses.reduce((sum, course) => sum + (course.ects || 0), 0);
   };
 
+  const getSelectedCredits = () => {
+    return Array.from(selectedCourseIds).reduce((sum, id) => {
+      const course = availableCourses.find(c => c.id === id);
+      return sum + (course?.credits || 0);
+    }, 0);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -190,6 +266,19 @@ export default function CourseSelectionScreen() {
               {student?.department_name} - {student?.class_year}. Sınıf
             </Text>
           </View>
+          <TouchableOpacity
+            style={[styles.bulkButton, isBulkMode && styles.bulkButtonActive]}
+            onPress={() => {
+              setIsBulkMode(!isBulkMode);
+              setSelectedCourseIds(new Set());
+            }}
+          >
+            <Ionicons
+              name={isBulkMode ? 'close' : 'checkbox-outline'}
+              size={22}
+              color={isBulkMode ? '#ef4444' : '#fff'}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Stats */}
@@ -211,11 +300,27 @@ export default function CourseSelectionScreen() {
         </View>
       </LinearGradient>
 
+      {/* Bulk Selection Info */}
+      {isBulkMode && (
+        <View style={styles.bulkInfo}>
+          <Ionicons name="information-circle" size={18} color="#667eea" />
+          <Text style={styles.bulkInfoText}>
+            {selectedCourseIds.size} ders seçili ({getSelectedCredits()} kredi)
+          </Text>
+          {selectedCourseIds.size > 0 && (
+            <TouchableOpacity onPress={() => setSelectedCourseIds(new Set())}>
+              <Text style={styles.bulkClearText}>Temizle</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Filter */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterContainer}
+        style={styles.filterScrollView}
       >
         {filterOptions.map((filter) => (
           <TouchableOpacity
@@ -228,7 +333,7 @@ export default function CourseSelectionScreen() {
           >
             <Ionicons
               name={filter.icon as any}
-              size={18}
+              size={14}
               color={selectedFilter === filter.key ? '#667eea' : '#64748b'}
             />
             <Text
@@ -268,6 +373,9 @@ export default function CourseSelectionScreen() {
         ) : (
           filteredCourses.map((course) => {
             const enrolled = isEnrolled(course.id!);
+            const isSelected = selectedCourseIds.has(course.id!);
+            const canSelect = isBulkMode && course.is_eligible && !enrolled;
+
             return (
               <TouchableOpacity
                 key={course.id}
@@ -275,78 +383,119 @@ export default function CourseSelectionScreen() {
                   styles.courseCard,
                   !course.is_eligible && !enrolled && styles.courseCardDisabled,
                   enrolled && styles.courseCardEnrolled,
+                  isSelected && styles.courseCardSelected,
                 ]}
                 onPress={() => handleCoursePress(course)}
                 activeOpacity={0.7}
               >
-                <View style={styles.courseHeader}>
-                  <View style={styles.courseCodeContainer}>
-                    <Text style={styles.courseCode}>{course.code}</Text>
+                {/* Bulk Selection Checkbox */}
+                {isBulkMode && (
+                  <View style={styles.checkboxContainer}>
                     <View
                       style={[
-                        styles.courseBadge,
-                        course.is_mandatory ? styles.mandatoryBadge : styles.electiveBadge,
+                        styles.checkbox,
+                        isSelected && styles.checkboxActive,
+                        !canSelect && styles.checkboxDisabled,
                       ]}
                     >
-                      <Text style={styles.courseBadgeText}>
-                        {course.is_mandatory ? 'Zorunlu' : 'Seçmeli'}
-                      </Text>
+                      {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
+                      {enrolled && <Ionicons name="checkmark" size={16} color="#64748b" />}
                     </View>
-                  </View>
-                  {enrolled && (
-                    <View style={styles.enrolledBadge}>
-                      <Ionicons name="checkmark" size={14} color="#fff" />
-                      <Text style={styles.enrolledBadgeText}>Alındı</Text>
-                    </View>
-                  )}
-                </View>
-
-                <Text style={styles.courseName}>{course.name}</Text>
-
-                <View style={styles.courseDetails}>
-                  <View style={styles.courseDetailItem}>
-                    <Ionicons name="person-outline" size={14} color="#64748b" />
-                    <Text style={styles.courseDetailText}>{course.instructor}</Text>
-                  </View>
-                  <View style={styles.courseDetailItem}>
-                    <Ionicons name="school-outline" size={14} color="#64748b" />
-                    <Text style={styles.courseDetailText}>{course.class_year}. Sınıf</Text>
-                  </View>
-                </View>
-
-                <View style={styles.courseFooter}>
-                  <View style={styles.courseCredits}>
-                    <Text style={styles.creditText}>{course.credits} Kredi</Text>
-                    <Text style={styles.ectsText}>{course.ects} AKTS</Text>
-                  </View>
-
-                  {!enrolled && !course.is_eligible && (
-                    <View style={styles.ineligibleContainer}>
-                      <Ionicons name="close-circle" size={16} color="#ef4444" />
-                      <Text style={styles.ineligibleText} numberOfLines={1}>
-                        {course.eligibility_reason}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-
-                {course.schedules && course.schedules.length > 0 && (
-                  <View style={styles.schedulePreview}>
-                    {course.schedules.map((schedule, idx) => (
-                      <View key={idx} style={styles.scheduleItem}>
-                        <Ionicons name="time-outline" size={12} color="#667eea" />
-                        <Text style={styles.scheduleText}>
-                          {schedule.day} {schedule.start_time}-{schedule.end_time} | {schedule.classroom}
-                        </Text>
-                      </View>
-                    ))}
                   </View>
                 )}
+
+                <View style={[styles.courseContent, isBulkMode && { marginLeft: 12 }]}>
+                  <View style={styles.courseHeader}>
+                    <View style={styles.courseCodeContainer}>
+                      <Text style={styles.courseCode}>{course.code}</Text>
+                      <View
+                        style={[
+                          styles.courseBadge,
+                          course.is_mandatory ? styles.mandatoryBadge : styles.electiveBadge,
+                        ]}
+                      >
+                        <Text style={styles.courseBadgeText}>
+                          {course.is_mandatory ? 'Zorunlu' : 'Seçmeli'}
+                        </Text>
+                      </View>
+                    </View>
+                    {enrolled && (
+                      <View style={styles.enrolledBadge}>
+                        <Ionicons name="checkmark" size={14} color="#fff" />
+                        <Text style={styles.enrolledBadgeText}>Alındı</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Text style={styles.courseName}>{course.name}</Text>
+
+                  <View style={styles.courseDetails}>
+                    <View style={styles.courseDetailItem}>
+                      <Ionicons name="person-outline" size={14} color="#64748b" />
+                      <Text style={styles.courseDetailText}>{course.instructor}</Text>
+                    </View>
+                    <View style={styles.courseDetailItem}>
+                      <Ionicons name="school-outline" size={14} color="#64748b" />
+                      <Text style={styles.courseDetailText}>{course.class_year}. Sınıf</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.courseFooter}>
+                    <View style={styles.courseCredits}>
+                      <Text style={styles.creditText}>{course.credits} Kredi</Text>
+                      <Text style={styles.ectsText}>{course.ects} AKTS</Text>
+                    </View>
+
+                    {!enrolled && !course.is_eligible && (
+                      <View style={styles.ineligibleContainer}>
+                        <Ionicons name="close-circle" size={16} color="#ef4444" />
+                        <Text style={styles.ineligibleText} numberOfLines={1}>
+                          {course.eligibility_reason}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {course.schedules && course.schedules.length > 0 && (
+                    <View style={styles.schedulePreview}>
+                      {course.schedules.map((schedule, idx) => (
+                        <View key={idx} style={styles.scheduleItem}>
+                          <Ionicons name="time-outline" size={12} color="#667eea" />
+                          <Text style={styles.scheduleText}>
+                            {schedule.day} {schedule.start_time}-{schedule.end_time} | {schedule.classroom}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })
         )}
       </ScrollView>
+
+      {/* Bulk Action Button */}
+      {isBulkMode && selectedCourseIds.size > 0 && (
+        <View style={styles.bulkActionContainer}>
+          <TouchableOpacity
+            style={styles.bulkEnrollButton}
+            onPress={handleBulkEnroll}
+            disabled={isEnrolling}
+          >
+            {isEnrolling ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <Ionicons name="add-circle" size={22} color="#fff" />
+                <Text style={styles.bulkEnrollText}>
+                  {selectedCourseIds.size} Dersi Programa Ekle
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Course Detail Modal */}
       <Modal
@@ -505,7 +654,7 @@ export default function CourseSelectionScreen() {
                     ]}
                   >
                     {isEnrolled(selectedCourse?.id || 0)
-                      ? 'Bu derse kayıtlısınız'
+                      ? 'Bu ders programınızda'
                       : selectedCourse?.eligibility_reason}
                   </Text>
                 </View>
@@ -525,7 +674,7 @@ export default function CourseSelectionScreen() {
                   ) : (
                     <>
                       <Ionicons name="trash-outline" size={20} color="#fff" />
-                      <Text style={styles.buttonText}>Kaydı Sil</Text>
+                      <Text style={styles.buttonText}>Dersi Kaldır</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -540,14 +689,14 @@ export default function CourseSelectionScreen() {
                   ) : (
                     <>
                       <Ionicons name="add-circle-outline" size={20} color="#fff" />
-                      <Text style={styles.buttonText}>Derse Kayıt Ol</Text>
+                      <Text style={styles.buttonText}>Programa Ekle</Text>
                     </>
                   )}
                 </TouchableOpacity>
               ) : (
                 <View style={styles.disabledButton}>
                   <Ionicons name="lock-closed" size={20} color="#64748b" />
-                  <Text style={styles.disabledButtonText}>Kayıt Yapılamaz</Text>
+                  <Text style={styles.disabledButtonText}>Eklenemez</Text>
                 </View>
               )}
             </View>
@@ -606,6 +755,17 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 2,
   },
+  bulkButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bulkButtonActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  },
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -631,20 +791,44 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     marginHorizontal: 16,
   },
-  filterContainer: {
+  bulkInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    paddingVertical: 12,
     gap: 8,
+  },
+  bulkInfoText: {
+    flex: 1,
+    color: '#667eea',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  bulkClearText: {
+    color: '#ef4444',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  filterScrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  filterContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    gap: 6,
+    alignItems: 'center',
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginRight: 8,
-    gap: 6,
+    marginRight: 6,
+    gap: 4,
   },
   filterButtonActive: {
     backgroundColor: 'rgba(102, 126, 234, 0.15)',
@@ -652,7 +836,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(102, 126, 234, 0.3)',
   },
   filterText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
     color: '#64748b',
   },
@@ -686,6 +870,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   courseCard: {
+    flexDirection: 'row',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
     padding: 16,
@@ -699,6 +884,32 @@ const styles = StyleSheet.create({
   courseCardEnrolled: {
     borderColor: 'rgba(16, 185, 129, 0.3)',
     backgroundColor: 'rgba(16, 185, 129, 0.05)',
+  },
+  courseCardSelected: {
+    borderColor: 'rgba(102, 126, 234, 0.5)',
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+  },
+  checkboxContainer: {
+    justifyContent: 'center',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#667eea',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: '#667eea',
+  },
+  checkboxDisabled: {
+    borderColor: '#64748b',
+    opacity: 0.5,
+  },
+  courseContent: {
+    flex: 1,
   },
   courseHeader: {
     flexDirection: 'row',
@@ -811,6 +1022,31 @@ const styles = StyleSheet.create({
   scheduleText: {
     fontSize: 12,
     color: '#94a3b8',
+  },
+  bulkActionContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: 32,
+    backgroundColor: '#0f172a',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  bulkEnrollButton: {
+    flexDirection: 'row',
+    backgroundColor: '#667eea',
+    paddingVertical: 16,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bulkEnrollText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
   // Modal Styles
   modalOverlay: {
@@ -1024,4 +1260,3 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
 });
-

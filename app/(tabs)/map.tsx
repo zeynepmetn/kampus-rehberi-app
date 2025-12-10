@@ -403,6 +403,7 @@ export default function MapScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterContainer}
+        style={styles.filterScrollView}
       >
         {filterTypes.map((type) => {
           const config = type === 'all' ? { icon: 'apps', color: '#667eea', label: 'Tümü' } : typeConfig[type];
@@ -418,7 +419,7 @@ export default function MapScreen() {
             >
               <Ionicons
                 name={config.icon as any}
-                size={18}
+                size={14}
                 color={selectedType === type ? config.color : '#64748b'}
               />
               <Text
@@ -694,28 +695,33 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  filterScrollView: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   filterContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    gap: 6,
+    alignItems: 'center',
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
     borderColor: 'transparent',
-    marginRight: 8,
-    gap: 6,
+    marginRight: 6,
+    gap: 4,
   },
   filterButtonActive: {
     backgroundColor: 'rgba(102, 126, 234, 0.1)',
   },
   filterText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
     color: '#64748b',
   },

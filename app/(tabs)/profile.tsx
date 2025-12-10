@@ -1,12 +1,11 @@
 import { useAuth } from '@/context/AuthContext';
-import { useCourses } from '@/context/CourseContext';
+import { getEnrolledCourses, StudentCourse } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Switch,
@@ -15,22 +14,30 @@ import {
   View,
 } from 'react-native';
 
-const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
-
 export default function ProfileScreen() {
-  const { student, settings, updateSettings, logout } = useAuth();
-  const { 
-    toggleCourse, 
-    isCourseSelected, 
-    getCoursesForDay, 
-    clearDaySelection, 
-    clearAllSelections,
-    getTotalSelectedCount,
-    getSelectedCountForDay,
-  } = useCourses();
+  const { student, settings, updateSettings, logout, isAdmin } = useAuth();
   const [localSettings, setLocalSettings] = useState(settings);
-  const [showCoursesModal, setShowCoursesModal] = useState(false);
-  const [selectedDay, setSelectedDay] = useState('Pazartesi');
+  const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
+  const [totalCredits, setTotalCredits] = useState(0);
+  const [totalEcts, setTotalEcts] = useState(0);
+
+  useEffect(() => {
+    if (student?.id) {
+      loadEnrolledCourses();
+    }
+  }, [student]);
+
+  const loadEnrolledCourses = async () => {
+    if (!student?.id) return;
+    try {
+      const courses = await getEnrolledCourses(student.id);
+      setEnrolledCourses(courses);
+      setTotalCredits(courses.reduce((sum, c) => sum + (c.credits || 0), 0));
+      setTotalEcts(courses.reduce((sum, c) => sum + (c.ects || 0), 0));
+    } catch (error) {
+      console.error('Error loading courses:', error);
+    }
+  };
 
   const handleToggleSetting = (key: keyof typeof settings.notifications) => {
     const newNotifications = {
@@ -92,8 +99,6 @@ export default function ProfileScreen() {
     },
   ];
 
-  const totalSelected = getTotalSelectedCount();
-
   const menuItems = [
     {
       label: 'Bildirimler',
@@ -102,11 +107,11 @@ export default function ProfileScreen() {
       onPress: () => router.push('/notifications'),
     },
     {
-      label: 'Derslerim',
-      icon: 'book-outline',
+      label: 'Ders Seçimi',
+      icon: 'school-outline',
       color: '#4ECDC4',
-      badge: totalSelected > 0 ? `${totalSelected} ders` : undefined,
-      onPress: () => setShowCoursesModal(true),
+      badge: enrolledCourses.length > 0 ? `${enrolledCourses.length} ders` : undefined,
+      onPress: () => router.push('/course-selection'),
     },
     {
       label: 'Akademik Takvim',
@@ -128,8 +133,13 @@ export default function ProfileScreen() {
     },
   ];
 
-  const currentDayCourses = getCoursesForDay(selectedDay);
-  const currentDaySelectedCount = getSelectedCountForDay(selectedDay);
+  // Get initials for avatar
+  const getInitials = () => {
+    if (student?.first_name && student?.last_name) {
+      return `${student.first_name[0]}${student.last_name[0]}`.toUpperCase();
+    }
+    return 'Ö';
+  };
 
   return (
     <View style={styles.container}>
@@ -141,19 +151,19 @@ export default function ProfileScreen() {
               colors={['#667eea', '#764ba2']}
               style={styles.avatar}
             >
-              <Text style={styles.avatarText}>
-                {student?.name?.split(' ').map((n) => n[0]).join('').toUpperCase() || 'Ö'}
-              </Text>
+              <Text style={styles.avatarText}>{getInitials()}</Text>
             </LinearGradient>
             <TouchableOpacity style={styles.editAvatarButton}>
               <Ionicons name="camera" size={14} color="#fff" />
             </TouchableOpacity>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{student?.name || 'Öğrenci'}</Text>
-            <Text style={styles.profileNumber}>{student?.studentNumber}</Text>
+            <Text style={styles.profileName}>
+              {student?.first_name} {student?.last_name}
+            </Text>
+            <Text style={styles.profileNumber}>{student?.student_number}</Text>
             <View style={styles.departmentBadge}>
-              <Text style={styles.departmentText}>{student?.department}</Text>
+              <Text style={styles.departmentText}>{student?.department_name}</Text>
             </View>
           </View>
         </View>
@@ -161,17 +171,17 @@ export default function ProfileScreen() {
         {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{student?.year || 2}</Text>
+            <Text style={styles.statValue}>{student?.class_year || 1}</Text>
             <Text style={styles.statLabel}>Sınıf</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>3.45</Text>
+            <Text style={styles.statValue}>{student?.gno?.toFixed(2) || '0.00'}</Text>
             <Text style={styles.statLabel}>GNO</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>85</Text>
+            <Text style={styles.statValue}>{totalEcts}</Text>
             <Text style={styles.statLabel}>AKTS</Text>
           </View>
         </View>
@@ -182,6 +192,33 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Enrolled Courses Summary */}
+        {enrolledCourses.length > 0 && (
+          <TouchableOpacity 
+            style={styles.courseSummary}
+            onPress={() => router.push('/course-selection')}
+          >
+            <View style={styles.courseSummaryHeader}>
+              <Text style={styles.courseSummaryTitle}>Bu Dönem</Text>
+              <Ionicons name="chevron-forward" size={20} color="#667eea" />
+            </View>
+            <View style={styles.courseSummaryStats}>
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{enrolledCourses.length}</Text>
+                <Text style={styles.summaryStatLabel}>Ders</Text>
+              </View>
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{totalCredits}</Text>
+                <Text style={styles.summaryStatLabel}>Kredi</Text>
+              </View>
+              <View style={styles.summaryStatItem}>
+                <Text style={styles.summaryStatValue}>{totalEcts}</Text>
+                <Text style={styles.summaryStatLabel}>AKTS</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Quick Menu */}
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
@@ -248,142 +285,6 @@ export default function ProfileScreen() {
           <Text style={styles.copyrightText}>© 2024 Üniversite</Text>
         </View>
       </ScrollView>
-
-      {/* Ders Seçimi Modal */}
-      <Modal
-        visible={showCoursesModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowCoursesModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Derslerim</Text>
-              <TouchableOpacity onPress={() => setShowCoursesModal(false)}>
-                <Ionicons name="close" size={28} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.modalSubtitle}>
-              Her gün için ayrı ayrı ders seçebilirsiniz
-            </Text>
-
-            {/* Gün Seçici */}
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              style={styles.dayTabsContainer}
-              contentContainerStyle={styles.dayTabs}
-            >
-              {days.map((day) => {
-                const dayCount = getSelectedCountForDay(day);
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayTab,
-                      selectedDay === day && styles.dayTabActive,
-                    ]}
-                    onPress={() => setSelectedDay(day)}
-                  >
-                    <Text
-                      style={[
-                        styles.dayTabText,
-                        selectedDay === day && styles.dayTabTextActive,
-                      ]}
-                    >
-                      {day.substring(0, 3)}
-                    </Text>
-                    {dayCount > 0 && (
-                      <View style={[
-                        styles.dayTabBadge,
-                        selectedDay === day && styles.dayTabBadgeActive,
-                      ]}>
-                        <Text style={styles.dayTabBadgeText}>{dayCount}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            {/* Seçili Gün Başlığı */}
-            <View style={styles.selectedDayHeader}>
-              <Text style={styles.selectedDayTitle}>{selectedDay}</Text>
-              <Text style={styles.selectedDayCount}>
-                {currentDaySelectedCount}/{currentDayCourses.length} ders seçili
-              </Text>
-            </View>
-
-            {/* Ders Listesi */}
-            <ScrollView style={styles.courseList}>
-              {currentDayCourses.length === 0 ? (
-                <View style={styles.emptyDayState}>
-                  <Ionicons name="cafe-outline" size={48} color="#64748b" />
-                  <Text style={styles.emptyDayText}>Bu gün ders yok</Text>
-                </View>
-              ) : (
-                currentDayCourses.map((course) => (
-                  <TouchableOpacity
-                    key={course.id}
-                    style={[
-                      styles.courseSelectItem,
-                      isCourseSelected(selectedDay, course.id) && styles.courseSelectItemActive,
-                    ]}
-                    onPress={() => toggleCourse(selectedDay, course.id)}
-                  >
-                    <View style={[styles.courseSelectColor, { backgroundColor: course.color }]} />
-                    <View style={styles.courseSelectInfo}>
-                      <View style={styles.courseSelectHeader}>
-                        <Text style={styles.courseSelectCode}>{course.code}</Text>
-                        <Text style={styles.courseSelectTime}>
-                          {course.startTime} - {course.endTime}
-                        </Text>
-                      </View>
-                      <Text style={styles.courseSelectName}>{course.name}</Text>
-                      <Text style={styles.courseSelectInstructor}>{course.instructor}</Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.courseSelectCheck,
-                        isCourseSelected(selectedDay, course.id) && styles.courseSelectCheckActive,
-                      ]}
-                    >
-                      {isCourseSelected(selectedDay, course.id) && (
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity 
-                style={styles.clearDayButton} 
-                onPress={() => clearDaySelection(selectedDay)}
-              >
-                <Text style={styles.clearDayButtonText}>{selectedDay} Temizle</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.clearAllButton} 
-                onPress={clearAllSelections}
-              >
-                <Text style={styles.clearAllButtonText}>Tümünü Temizle</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={() => setShowCoursesModal(false)}
-            >
-              <Text style={styles.applyButtonText}>
-                Tamam ({totalSelected} ders seçili)
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -491,6 +392,42 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
     paddingBottom: 100,
+  },
+  courseSummary: {
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.2)',
+  },
+  courseSummaryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  courseSummaryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  courseSummaryStats: {
+    flexDirection: 'row',
+  },
+  summaryStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  summaryStatValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#667eea',
+  },
+  summaryStatLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 2,
   },
   menuSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
@@ -610,205 +547,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#475569',
     marginTop: 4,
-  },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#1a1a2e',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#64748b',
-    marginBottom: 16,
-  },
-  dayTabsContainer: {
-    marginBottom: 16,
-  },
-  dayTabs: {
-    gap: 8,
-  },
-  dayTab: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dayTabActive: {
-    backgroundColor: '#667eea',
-  },
-  dayTabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  dayTabTextActive: {
-    color: '#fff',
-  },
-  dayTabBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  dayTabBadgeActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  dayTabBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  selectedDayHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  selectedDayTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  selectedDayCount: {
-    fontSize: 13,
-    color: '#4ECDC4',
-  },
-  courseList: {
-    maxHeight: 300,
-  },
-  emptyDayState: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyDayText: {
-    fontSize: 14,
-    color: '#64748b',
-    marginTop: 12,
-  },
-  courseSelectItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  courseSelectItemActive: {
-    borderColor: '#4ECDC4',
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
-  },
-  courseSelectColor: {
-    width: 4,
-    height: 50,
-    borderRadius: 2,
-    marginRight: 12,
-  },
-  courseSelectInfo: {
-    flex: 1,
-  },
-  courseSelectHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  courseSelectCode: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#667eea',
-  },
-  courseSelectTime: {
-    fontSize: 11,
-    color: '#94a3b8',
-  },
-  courseSelectName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  courseSelectInstructor: {
-    fontSize: 12,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  courseSelectCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#475569',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  courseSelectCheckActive: {
-    backgroundColor: '#4ECDC4',
-    borderColor: '#4ECDC4',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  clearDayButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
-  clearDayButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#94a3b8',
-  },
-  clearAllButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    alignItems: 'center',
-  },
-  clearAllButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ef4444',
-  },
-  applyButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#4ECDC4',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  applyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
 });
