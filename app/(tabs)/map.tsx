@@ -91,11 +91,11 @@ const campusLocations: CampusLocation[] = [
   },
   {
     id: 'hubtuam',
-    name: 'HÜBTÜAM',
+    name: 'HÜBTUAM',
     type: 'building',
     latitude: 40.56841607026478,
     longitude: 34.97893201640681,
-    description: 'HÜBTÜAM Binası',
+    description: 'HÜBTUAM Binası',
   },
   {
     id: 'besyo-acik-saha',

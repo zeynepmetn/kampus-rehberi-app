@@ -2006,6 +2006,369 @@ export const seedSampleData = async (): Promise<void> => {
     });
   }
 
+  // Add cafeteria menu items for today
+  const today = new Date().toISOString().split('T')[0];
+  await createCafeteriaMenu({
+    name: 'Mercimek Çorbası',
+    description: 'Geleneksel Türk mercimek çorbası',
+    price: 15,
+    category: 'main',
+    available: 1,
+    menu_date: today,
+  });
+  await createCafeteriaMenu({
+    name: 'Tavuk Sote',
+    description: 'Sebzeli tavuk sote, pilav ile servis edilir',
+    price: 45,
+    category: 'main',
+    available: 1,
+    menu_date: today,
+  });
+  await createCafeteriaMenu({
+    name: 'Karnıyarık',
+    description: 'Kıymalı patlıcan dolması',
+    price: 50,
+    category: 'main',
+    available: 1,
+    menu_date: today,
+  });
+  await createCafeteriaMenu({
+    name: 'Pilav',
+    description: 'Tereyağlı pirinç pilavı',
+    price: 12,
+    category: 'side',
+    available: 1,
+    menu_date: today,
+  });
+  await createCafeteriaMenu({
+    name: 'Sütlaç',
+    description: 'Geleneksel fırın sütlaç',
+    price: 20,
+    category: 'dessert',
+    available: 1,
+    menu_date: today,
+  });
+  await createCafeteriaMenu({
+    name: 'Ayran',
+    description: 'Taze köpüklü ayran',
+    price: 8,
+    category: 'drink',
+    available: 1,
+    menu_date: today,
+  });
+
+  // Add cafeteria snacks
+  await createCafeteriaSnack({
+    name: 'Patates Kızartması',
+    description: 'Klasik patates kızartması',
+    price: 25,
+    category: 'Atıştırmalık',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Hamburger',
+    description: 'Klasik hamburger',
+    price: 40,
+    category: 'Atıştırmalık',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Tost',
+    description: 'Kaşarlı tost',
+    price: 20,
+    category: 'Atıştırmalık',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Çay',
+    description: 'Türk çayı',
+    price: 5,
+    category: 'İçecek',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Kahve',
+    description: 'Türk kahvesi',
+    price: 15,
+    category: 'İçecek',
+    available: 1,
+  });
+
+  // Add announcements
+  await createAnnouncement({
+    owner: 'Yemekhane',
+    title: '🍕 İtalyan Haftası Başladı!',
+    description: 'Bu hafta yemekhanede İtalyan mutfağından lezzetler sizlerle! Pizza, makarna ve tiramisu günlük menümüzde. Kaçırmayın!',
+  });
+  await createAnnouncement({
+    owner: 'Yemekhane',
+    title: '🥗 Sağlıklı Yaşam Menüsü',
+    description: 'Fit menümüz artık her gün mevcut! Düşük kalorili, yüksek proteinli seçenekler için 2. kata bekleriz.',
+  });
+  await createAnnouncement({
+    owner: 'Yemekhane',
+    title: '☕ Kahve Köşesi Açıldı',
+    description: 'Yemekhanemizin girişinde yeni kahve köşemiz hizmetinizde! Americano, Latte, Cappuccino ve daha fazlası öğrenci fiyatlarıyla.',
+  });
+  await createAnnouncement({
+    owner: 'Öğrenci İşleri',
+    title: '📚 Ders Kayıt Tarihleri',
+    description: '2024-2025 Güz dönemi ders kayıt işlemleri 16-20 Eylül tarihleri arasında yapılacaktır. Detaylı bilgi için öğrenci işlerine başvurunuz.',
+  });
+  await createAnnouncement({
+    owner: 'Kütüphane',
+    title: '📖 24 Saat Açık Çalışma Alanı',
+    description: 'Kütüphanemiz artık 7/24 hizmetinizde! Gece çalışmak isteyen öğrencilerimiz için özel çalışma alanları hazırlandı.',
+  });
+
+  // Add events
+  const eventDate1 = new Date();
+  eventDate1.setDate(eventDate1.getDate() + 7);
+  await createEvent({
+    title: 'Konser',
+    description: 'Üniversite öğrenci toplulukları konseri',
+    location: 'Spor Salonu',
+    event_date: eventDate1.toISOString(),
+    organizer: 'Öğrenci Konseyi',
+  });
+  const eventDate2 = new Date();
+  eventDate2.setDate(eventDate2.getDate() + 14);
+  await createEvent({
+    title: 'Teknoloji Fuarı',
+    description: 'Bilgisayar Mühendisliği Bölümü teknoloji fuarı',
+    location: 'Mühendislik Fakültesi',
+    event_date: eventDate2.toISOString(),
+    organizer: 'Bilgisayar Mühendisliği Topluluğu',
+  });
+  const eventDate3 = new Date();
+  eventDate3.setDate(eventDate3.getDate() + 21);
+  await createEvent({
+    title: 'Kariyer Günleri',
+    description: 'İş dünyasından profesyonellerle buluşma',
+    location: 'Konferans Salonu',
+    event_date: eventDate3.toISOString(),
+    organizer: 'Kariyer Merkezi',
+  });
+  const eventDate4 = new Date();
+  eventDate4.setDate(eventDate4.getDate() + 28);
+  await createEvent({
+    title: 'Spor Turnuvası',
+    description: 'Fakülteler arası futbol turnuvası',
+    location: 'Spor Salonu',
+    event_date: eventDate4.toISOString(),
+    organizer: 'Spor Kulübü',
+  });
+  const eventDate5 = new Date();
+  eventDate5.setDate(eventDate5.getDate() + 35);
+  await createEvent({
+    title: 'Kültür Gecesi',
+    description: 'Geleneksel kültür gecesi etkinliği',
+    location: 'Amfi Tiyatro',
+    event_date: eventDate5.toISOString(),
+    organizer: 'Kültür ve Sanat Topluluğu',
+  });
+
+  // Add more cafeteria menu items for different days
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  
+  await createCafeteriaMenu({
+    name: 'Ezogelin Çorbası',
+    description: 'Geleneksel ezogelin çorbası',
+    price: 15,
+    category: 'main',
+    available: 1,
+    menu_date: tomorrowStr,
+  });
+  await createCafeteriaMenu({
+    name: 'Izgara Köfte',
+    description: 'Izgara köfte, pilav ve salata',
+    price: 50,
+    category: 'main',
+    available: 1,
+    menu_date: tomorrowStr,
+  });
+  await createCafeteriaMenu({
+    name: 'Mantı',
+    description: 'Ev yapımı mantı, yoğurt ve tereyağı ile',
+    price: 45,
+    category: 'main',
+    available: 1,
+    menu_date: tomorrowStr,
+  });
+  await createCafeteriaMenu({
+    name: 'Baklava',
+    description: 'Cevizli baklava',
+    price: 25,
+    category: 'dessert',
+    available: 1,
+    menu_date: tomorrowStr,
+  });
+  await createCafeteriaMenu({
+    name: 'Limonata',
+    description: 'Taze sıkılmış limonata',
+    price: 10,
+    category: 'drink',
+    available: 1,
+    menu_date: tomorrowStr,
+  });
+
+  // Add more snacks
+  await createCafeteriaSnack({
+    name: 'Simit',
+    description: 'Taze simit',
+    price: 8,
+    category: 'Atıştırmalık',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Poğaça',
+    description: 'Kaşarlı poğaça',
+    price: 12,
+    category: 'Atıştırmalık',
+    available: 1,
+  });
+  await createCafeteriaSnack({
+    name: 'Su',
+    description: '500ml pet şişe su',
+    price: 3,
+    category: 'İçecek',
+    available: 1,
+  });
+
+  // Add more announcements
+  await createAnnouncement({
+    owner: 'Spor Bilimleri Fakültesi',
+    title: '🏃 Fitness Salonu Açıldı',
+    description: 'Yeni fitness salonumuz tüm öğrencilerimize açıldı! Modern ekipmanlar ve uzman antrenörlerle hizmetinizdeyiz. Ücretsiz deneme dersleri için başvurun.',
+  });
+  await createAnnouncement({
+    owner: 'Öğrenci İşleri',
+    title: '💰 Burs Başvuruları Başladı',
+    description: '2024-2025 akademik yılı burs başvuruları başlamıştır. Başvuru için gerekli belgeler ve detaylı bilgi öğrenci işleri sayfasında yayınlanmıştır.',
+  });
+  await createAnnouncement({
+    owner: 'Kültür ve Sanat Topluluğu',
+    title: '🎭 Tiyatro Gösterisi',
+    description: 'Üniversitemiz tiyatro topluluğu yeni sezon gösterisi için hazırlanıyor. Oyunculuk ve teknik ekibinde yer almak isteyen öğrencilerimiz başvurabilir.',
+  });
+  await createAnnouncement({
+    owner: 'Mühendislik Fakültesi',
+    title: '🔬 Laboratuvar Kullanım Saatleri',
+    description: 'Mühendislik fakültesi laboratuvarları hafta içi 08:00-18:00 saatleri arasında açıktır. Rezervasyon için laboratuvar sorumlusu ile iletişime geçiniz.',
+  });
+  await createAnnouncement({
+    owner: 'Sağlık Merkezi',
+    title: '🏥 Aşı Kampanyası',
+    description: 'Grip aşısı kampanyamız başlamıştır. Tüm öğrencilerimiz ücretsiz aşı yaptırabilir. Randevu için sağlık merkezine başvurun.',
+  });
+
+  // Add more events
+  const eventDate6 = new Date();
+  eventDate6.setDate(eventDate6.getDate() + 10);
+  await createEvent({
+    title: 'Bilim Şenliği',
+    description: 'Fen bilimleri fakültesi bilim şenliği etkinliği',
+    location: 'Fen Fakültesi',
+    event_date: eventDate6.toISOString(),
+    organizer: 'Fen Bilimleri Topluluğu',
+  });
+  const eventDate7 = new Date();
+  eventDate7.setDate(eventDate7.getDate() + 17);
+  await createEvent({
+    title: 'Kitap Fuarı',
+    description: 'Kampüs içi kitap fuarı ve imza günleri',
+    location: 'Kütüphane Önü',
+    event_date: eventDate7.toISOString(),
+    organizer: 'Kütüphane',
+  });
+  const eventDate8 = new Date();
+  eventDate8.setDate(eventDate8.getDate() + 24);
+  await createEvent({
+    title: 'Müzik Gecesi',
+    description: 'Öğrenci müzik grupları konseri',
+    location: 'Amfi Tiyatro',
+    event_date: eventDate8.toISOString(),
+    organizer: 'Müzik Topluluğu',
+  });
+  const eventDate9 = new Date();
+  eventDate9.setDate(eventDate9.getDate() + 31);
+  await createEvent({
+    title: 'Seminer: Yapay Zeka',
+    description: 'Yapay zeka ve geleceği konulu seminer',
+    location: 'Konferans Salonu',
+    event_date: eventDate9.toISOString(),
+    organizer: 'Bilgisayar Mühendisliği Bölümü',
+  });
+  const eventDate10 = new Date();
+  eventDate10.setDate(eventDate10.getDate() + 38);
+  await createEvent({
+    title: 'Fotoğraf Sergisi',
+    description: 'Öğrenci fotoğraf sergisi açılışı',
+    location: 'Sanat Galerisi',
+    event_date: eventDate10.toISOString(),
+    organizer: 'Fotoğrafçılık Topluluğu',
+  });
+
+  // Add academic calendar for 2024-2025 Fall Semester
+  await createAcademicCalendar({
+    title: 'Güz Dönemi Başlangıcı',
+    description: '2024-2025 Güz dönemi derslerinin başlangıcı',
+    event_date: '2024-09-16',
+    event_type: 'semester',
+    icon: 'school-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Vize Haftası',
+    description: 'Güz dönemi vize sınavları',
+    event_date: '2024-11-04',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Vize Haftası Bitişi',
+    description: 'Güz dönemi vize sınavlarının bitişi',
+    event_date: '2024-11-08',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Final Haftası',
+    description: 'Güz dönemi final sınavları',
+    event_date: '2024-12-23',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Final Haftası Bitişi',
+    description: 'Güz dönemi final sınavlarının bitişi',
+    event_date: '2024-12-27',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Bütünleme Sınavları',
+    description: 'Güz dönemi bütünleme sınavları',
+    event_date: '2025-01-13',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Güz Dönemi Bitişi',
+    description: '2024-2025 Güz döneminin sona ermesi',
+    event_date: '2025-01-17',
+    event_type: 'semester',
+    icon: 'school-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Bahar Dönemi Başlangıcı',
+    description: '2024-2025 Bahar dönemi derslerinin başlangıcı',
+    event_date: '2025-02-10',
+    event_type: 'semester',
+    icon: 'school-outline',
+  });
+
   console.log('Sample data seeded successfully');
 };
 

@@ -134,9 +134,9 @@ export default function ExamsManagement() {
     });
   };
 
-  const openModal = (exam?: Exam) => {
+  const openModal = async (exam?: Exam) => {
     if (selectedDepartment) {
-      loadCourses();
+      await loadCourses();
     }
     if (exam) {
       setEditingExam(exam);
@@ -157,8 +157,20 @@ export default function ExamsManagement() {
   };
 
   const handleSave = async () => {
-    if (!examForm.course_id || !examForm.examDate || !examForm.classroom.trim() || !examForm.faculty.trim()) {
-      Alert.alert('Hata', 'Tüm alanları doldurun');
+    if (!examForm.course_id) {
+      Alert.alert('Hata', 'Lütfen bir ders seçin');
+      return;
+    }
+    if (!examForm.examDate) {
+      Alert.alert('Hata', 'Lütfen sınav tarihini girin');
+      return;
+    }
+    if (!examForm.classroom.trim()) {
+      Alert.alert('Hata', 'Lütfen sınıf bilgisini girin');
+      return;
+    }
+    if (!examForm.faculty.trim()) {
+      Alert.alert('Hata', 'Lütfen fakülte bilgisini girin');
       return;
     }
 
@@ -419,29 +431,36 @@ export default function ExamsManagement() {
               </TouchableOpacity>
             </View>
             <ScrollView>
-              {courses.map((course) => (
-                <TouchableOpacity
-                  key={course.id}
-                  style={[
-                    styles.modalItem,
-                    examForm.course_id === course.id?.toString() && styles.modalItemActive,
-                  ]}
-                  onPress={() => {
-                    setExamForm({ ...examForm, course_id: course.id!.toString() });
-                    setShowCoursePicker(false);
-                  }}
-                >
-                  <View>
-                    <Text style={styles.modalItemText}>{course.code} - {course.name}</Text>
-                    <Text style={styles.modalItemSubtext}>
-                      {course.class_year}. Sınıf • {course.semester}. Dönem
-                    </Text>
-                  </View>
-                  {examForm.course_id === course.id?.toString() && (
-                    <Ionicons name="checkmark" size={24} color="#667eea" />
-                  )}
-                </TouchableOpacity>
-              ))}
+              {courses.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="book-outline" size={48} color="#64748b" />
+                  <Text style={styles.emptyText}>Bu bölüm için ders bulunmuyor</Text>
+                </View>
+              ) : (
+                courses.map((course) => (
+                  <TouchableOpacity
+                    key={course.id}
+                    style={[
+                      styles.modalItem,
+                      examForm.course_id === course.id?.toString() && styles.modalItemActive,
+                    ]}
+                    onPress={() => {
+                      setExamForm({ ...examForm, course_id: course.id!.toString() });
+                      setShowCoursePicker(false);
+                    }}
+                  >
+                    <View>
+                      <Text style={styles.modalItemText}>{course.code} - {course.name}</Text>
+                      <Text style={styles.modalItemSubtext}>
+                        {course.class_year}. Sınıf • {course.semester}. Dönem
+                      </Text>
+                    </View>
+                    {examForm.course_id === course.id?.toString() && (
+                      <Ionicons name="checkmark" size={24} color="#667eea" />
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </View>
         </View>

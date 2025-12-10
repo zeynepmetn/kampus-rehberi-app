@@ -346,7 +346,10 @@ export default function ScheduleScreen() {
               </View>
               <Text style={styles.actionText}>Akademik Takvim</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionCard}>
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/my-exams')}
+            >
               <View style={[styles.actionIcon, { backgroundColor: 'rgba(255, 107, 107, 0.15)' }]}>
                 <Ionicons name="document-text" size={24} color="#FF6B6B" />
               </View>
