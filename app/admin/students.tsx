@@ -271,44 +271,7 @@ export default function StudentsManagement() {
         )}
       </ScrollView>
 
-      {/* Department Picker Modal */}
-      <Modal
-        visible={showDepartmentPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowDepartmentPicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Bölüm Seçin</Text>
-              <TouchableOpacity onPress={() => setShowDepartmentPicker(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView>
-              {departments.map((dept) => (
-                <TouchableOpacity
-                  key={dept.id}
-                  style={[
-                    styles.modalItem,
-                    formData.department_id === dept.id?.toString() && styles.modalItemActive,
-                  ]}
-                  onPress={() => {
-                    setFormData({ ...formData, department_id: dept.id!.toString() });
-                    setShowDepartmentPicker(false);
-                  }}
-                >
-                  <Text style={styles.modalItemText}>{dept.name}</Text>
-                  {formData.department_id === dept.id?.toString() && (
-                    <Ionicons name="checkmark" size={24} color="#667eea" />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+      {/* Department Picker Modal - Inline in Form */}
 
       {/* Student Form Modal */}
       <Modal
@@ -383,13 +346,44 @@ export default function StudentsManagement() {
                 <Text style={styles.formLabel}>Bölüm *</Text>
                 <TouchableOpacity
                   style={styles.formInput}
-                  onPress={() => setShowDepartmentPicker(true)}
+                  onPress={() => setShowDepartmentPicker(!showDepartmentPicker)}
                 >
                   <Text style={[styles.formInputText, !selectedDepartment && styles.placeholder]}>
                     {selectedDepartment?.name || 'Bölüm Seçin'}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color="#64748b" />
+                  <Ionicons name={showDepartmentPicker ? "chevron-up" : "chevron-down"} size={20} color="#64748b" />
                 </TouchableOpacity>
+                
+                {/* Inline Department Picker */}
+                {showDepartmentPicker && (
+                  <View style={styles.inlinePicker}>
+                    <ScrollView style={styles.inlinePickerScroll} nestedScrollEnabled>
+                      {departments.map((dept) => (
+                        <TouchableOpacity
+                          key={dept.id}
+                          style={[
+                            styles.inlinePickerItem,
+                            formData.department_id === dept.id?.toString() && styles.inlinePickerItemActive,
+                          ]}
+                          onPress={() => {
+                            setFormData({ ...formData, department_id: dept.id!.toString() });
+                            setShowDepartmentPicker(false);
+                          }}
+                        >
+                          <Text style={[
+                            styles.inlinePickerText,
+                            formData.department_id === dept.id?.toString() && styles.inlinePickerTextActive,
+                          ]}>
+                            {dept.name}
+                          </Text>
+                          {formData.department_id === dept.id?.toString() && (
+                            <Ionicons name="checkmark" size={20} color="#667eea" />
+                          )}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               <View style={styles.formRow}>
@@ -680,6 +674,36 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     color: '#64748b',
+  },
+  inlinePicker: {
+    marginTop: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+  },
+  inlinePickerScroll: {
+    maxHeight: 200,
+  },
+  inlinePickerItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  inlinePickerItemActive: {
+    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+  },
+  inlinePickerText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  inlinePickerTextActive: {
+    color: '#fff',
+    fontWeight: '600',
   },
   buttonGroup: {
     flexDirection: 'row',
