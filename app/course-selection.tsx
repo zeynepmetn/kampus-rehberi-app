@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import {
   CourseWithEligibility,
   enrollCourse,
@@ -30,6 +31,7 @@ type FilterType = 'all' | 'eligible' | 'enrolled' | 'mandatory' | 'elective';
 
 export default function CourseSelectionScreen() {
   const { student } = useAuth();
+  const { colors, isDark } = useTheme();
   const [availableCourses, setAvailableCourses] = useState<CourseWithEligibility[]>([]);
   const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +44,8 @@ export default function CourseSelectionScreen() {
   // Bulk selection
   const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
   const [isBulkMode, setIsBulkMode] = useState(false);
+
+  const styles = createStyles(colors, isDark);
 
   useEffect(() => {
     if (student?.id) {
@@ -81,10 +85,8 @@ export default function CourseSelectionScreen() {
 
   const handleCoursePress = (course: CourseWithEligibility) => {
     if (isBulkMode) {
-      // In bulk mode, toggle selection
       toggleCourseSelection(course.id!);
     } else {
-      // Normal mode, show modal
       setSelectedCourse(course);
       setShowCourseModal(true);
     }
@@ -94,7 +96,6 @@ export default function CourseSelectionScreen() {
     const course = availableCourses.find(c => c.id === courseId);
     if (!course) return;
 
-    // Only allow selection of eligible courses that are not already enrolled
     if (!course.is_eligible || isEnrolled(courseId)) return;
 
     const newSelected = new Set(selectedCourseIds);
@@ -246,7 +247,7 @@ export default function CourseSelectionScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Dersler yükleniyor...</Text>
       </View>
     );
@@ -255,7 +256,7 @@ export default function CourseSelectionScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -303,7 +304,7 @@ export default function CourseSelectionScreen() {
       {/* Bulk Selection Info */}
       {isBulkMode && (
         <View style={styles.bulkInfo}>
-          <Ionicons name="information-circle" size={18} color="#667eea" />
+          <Ionicons name="information-circle" size={18} color={colors.primary} />
           <Text style={styles.bulkInfoText}>
             {selectedCourseIds.size} ders seçili ({getSelectedCredits()} kredi)
           </Text>
@@ -334,7 +335,7 @@ export default function CourseSelectionScreen() {
             <Ionicons
               name={filter.icon as any}
               size={14}
-              color={selectedFilter === filter.key ? '#667eea' : '#64748b'}
+              color={selectedFilter === filter.key ? colors.primary : colors.textTertiary}
             />
             <Text
               style={[
@@ -357,7 +358,7 @@ export default function CourseSelectionScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#667eea"
+            tintColor={colors.primary}
           />
         }
       >
@@ -367,7 +368,7 @@ export default function CourseSelectionScreen() {
 
         {filteredCourses.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="school-outline" size={64} color="#64748b" />
+            <Ionicons name="school-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyText}>Bu filtreye uygun ders bulunamadı</Text>
           </View>
         ) : (
@@ -399,7 +400,7 @@ export default function CourseSelectionScreen() {
                       ]}
                     >
                       {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}
-                      {enrolled && <Ionicons name="checkmark" size={16} color="#64748b" />}
+                      {enrolled && <Ionicons name="checkmark" size={16} color={colors.textTertiary} />}
                     </View>
                   </View>
                 )}
@@ -431,11 +432,11 @@ export default function CourseSelectionScreen() {
 
                   <View style={styles.courseDetails}>
                     <View style={styles.courseDetailItem}>
-                      <Ionicons name="person-outline" size={14} color="#64748b" />
+                      <Ionicons name="person-outline" size={14} color={colors.textTertiary} />
                       <Text style={styles.courseDetailText}>{course.instructor}</Text>
                     </View>
                     <View style={styles.courseDetailItem}>
-                      <Ionicons name="school-outline" size={14} color="#64748b" />
+                      <Ionicons name="school-outline" size={14} color={colors.textTertiary} />
                       <Text style={styles.courseDetailText}>{course.class_year}. Sınıf</Text>
                     </View>
                   </View>
@@ -448,7 +449,7 @@ export default function CourseSelectionScreen() {
 
                     {!enrolled && !course.is_eligible && (
                       <View style={styles.ineligibleContainer}>
-                        <Ionicons name="close-circle" size={16} color="#ef4444" />
+                        <Ionicons name="close-circle" size={16} color={colors.error} />
                         <Text style={styles.ineligibleText} numberOfLines={1}>
                           {course.eligibility_reason}
                         </Text>
@@ -460,7 +461,7 @@ export default function CourseSelectionScreen() {
                     <View style={styles.schedulePreview}>
                       {course.schedules.map((schedule, idx) => (
                         <View key={idx} style={styles.scheduleItem}>
-                          <Ionicons name="time-outline" size={12} color="#667eea" />
+                          <Ionicons name="time-outline" size={12} color={colors.primary} />
                           <Text style={styles.scheduleText}>
                             {schedule.day} {schedule.start_time}-{schedule.end_time} | {schedule.classroom}
                           </Text>
@@ -512,7 +513,7 @@ export default function CourseSelectionScreen() {
                 <Text style={styles.modalTitle}>{selectedCourse?.name}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowCourseModal(false)}>
-                <Ionicons name="close" size={28} color="#fff" />
+                <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -521,31 +522,31 @@ export default function CourseSelectionScreen() {
               <View style={styles.modalSection}>
                 <Text style={styles.modalSectionTitle}>Ders Bilgileri</Text>
                 <View style={styles.infoRow}>
-                  <Ionicons name="person" size={18} color="#667eea" />
+                  <Ionicons name="person" size={18} color={colors.primary} />
                   <Text style={styles.infoLabel}>Öğretim Üyesi:</Text>
                   <Text style={styles.infoValue}>{selectedCourse?.instructor}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Ionicons name="school" size={18} color="#667eea" />
+                  <Ionicons name="school" size={18} color={colors.primary} />
                   <Text style={styles.infoLabel}>Sınıf:</Text>
                   <Text style={styles.infoValue}>{selectedCourse?.class_year}. Sınıf</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Ionicons name="bookmark" size={18} color="#667eea" />
+                  <Ionicons name="bookmark" size={18} color={colors.primary} />
                   <Text style={styles.infoLabel}>Tür:</Text>
                   <Text style={styles.infoValue}>
                     {selectedCourse?.is_mandatory ? 'Zorunlu' : 'Seçmeli'}
                   </Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Ionicons name="ribbon" size={18} color="#667eea" />
+                  <Ionicons name="ribbon" size={18} color={colors.primary} />
                   <Text style={styles.infoLabel}>Kredi/AKTS:</Text>
                   <Text style={styles.infoValue}>
                     {selectedCourse?.credits} Kredi / {selectedCourse?.ects} AKTS
                   </Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Ionicons name="people" size={18} color="#667eea" />
+                  <Ionicons name="people" size={18} color={colors.primary} />
                   <Text style={styles.infoLabel}>Kontenjan:</Text>
                   <Text style={styles.infoValue}>
                     {selectedCourse?.enrolled_count || 0} / {selectedCourse?.quota}
@@ -641,8 +642,8 @@ export default function CourseSelectionScreen() {
                     size={24}
                     color={
                       selectedCourse?.is_eligible || isEnrolled(selectedCourse?.id || 0)
-                        ? '#10b981'
-                        : '#ef4444'
+                        ? colors.success
+                        : colors.error
                     }
                   />
                   <Text
@@ -695,7 +696,7 @@ export default function CourseSelectionScreen() {
                 </TouchableOpacity>
               ) : (
                 <View style={styles.disabledButton}>
-                  <Ionicons name="lock-closed" size={20} color="#64748b" />
+                  <Ionicons name="lock-closed" size={20} color={colors.textTertiary} />
                   <Text style={styles.disabledButtonText}>Eklenemez</Text>
                 </View>
               )}
@@ -707,19 +708,19 @@ export default function CourseSelectionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 12,
     fontSize: 14,
   },
@@ -737,7 +738,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -752,23 +753,23 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   bulkButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   bulkButtonActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.3)',
   },
   statsContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: 16,
   },
@@ -779,44 +780,45 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#667eea',
+    color: '#fff',
   },
   statLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   statDivider: {
     width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 16,
   },
   bulkInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: colors.primary + '15',
     paddingVertical: 10,
     paddingHorizontal: 16,
     gap: 8,
   },
   bulkInfoText: {
     flex: 1,
-    color: '#667eea',
+    color: colors.primary,
     fontSize: 13,
     fontWeight: '500',
   },
   bulkClearText: {
-    color: '#ef4444',
+    color: colors.error,
     fontSize: 13,
     fontWeight: '600',
   },
   filterScrollView: {
     flexGrow: 0,
     flexShrink: 0,
+    backgroundColor: colors.background,
   },
   filterContainer: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 8,
     gap: 6,
     alignItems: 'center',
   },
@@ -824,24 +826,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     marginRight: 6,
     gap: 4,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: colors.primary + '20',
+    borderColor: colors.primary + '40',
   },
   filterText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   filterTextActive: {
-    color: '#667eea',
+    color: colors.primary,
   },
   courseList: {
     flex: 1,
@@ -853,11 +856,11 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   listCount: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontWeight: '400',
   },
   emptyContainer: {
@@ -865,29 +868,29 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
   courseCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   courseCardDisabled: {
     opacity: 0.6,
   },
   courseCardEnrolled: {
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-    backgroundColor: 'rgba(16, 185, 129, 0.05)',
+    borderColor: colors.success + '40',
+    backgroundColor: colors.success + '08',
   },
   courseCardSelected: {
-    borderColor: 'rgba(102, 126, 234, 0.5)',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    borderColor: colors.primary + '60',
+    backgroundColor: colors.primary + '10',
   },
   checkboxContainer: {
     justifyContent: 'center',
@@ -897,15 +900,15 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#667eea',
+    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
   },
   checkboxDisabled: {
-    borderColor: '#64748b',
+    borderColor: colors.textTertiary,
     opacity: 0.5,
   },
   courseContent: {
@@ -925,7 +928,7 @@ const styles = StyleSheet.create({
   courseCode: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#667eea',
+    color: colors.primary,
   },
   courseBadge: {
     paddingHorizontal: 8,
@@ -933,20 +936,20 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   mandatoryBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: colors.error + '20',
   },
   electiveBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: colors.success + '20',
   },
   courseBadgeText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   enrolledBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#10b981',
+    backgroundColor: colors.success,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -960,7 +963,7 @@ const styles = StyleSheet.create({
   courseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 8,
   },
   courseDetails: {
@@ -975,7 +978,7 @@ const styles = StyleSheet.create({
   },
   courseDetailText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   courseFooter: {
     flexDirection: 'row',
@@ -988,12 +991,12 @@ const styles = StyleSheet.create({
   },
   creditText: {
     fontSize: 12,
-    color: '#667eea',
+    color: colors.primary,
     fontWeight: '600',
   },
   ectsText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   ineligibleContainer: {
     flexDirection: 'row',
@@ -1004,14 +1007,14 @@ const styles = StyleSheet.create({
   },
   ineligibleText: {
     fontSize: 11,
-    color: '#ef4444',
+    color: colors.error,
     maxWidth: 150,
   },
   schedulePreview: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.divider,
   },
   scheduleItem: {
     flexDirection: 'row',
@@ -1021,7 +1024,7 @@ const styles = StyleSheet.create({
   },
   scheduleText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   bulkActionContainer: {
     position: 'absolute',
@@ -1030,13 +1033,13 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 16,
     paddingBottom: 32,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.divider,
   },
   bulkEnrollButton: {
     flexDirection: 'row',
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
@@ -1051,11 +1054,11 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%',
@@ -1066,18 +1069,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   modalCode: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#667eea',
+    color: colors.primary,
     marginBottom: 4,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     maxWidth: 280,
   },
   modalContent: {
@@ -1089,7 +1092,7 @@ const styles = StyleSheet.create({
   modalSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 12,
   },
   infoRow: {
@@ -1100,24 +1103,26 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
     width: 100,
   },
   infoValue: {
     fontSize: 13,
-    color: '#fff',
+    color: colors.text,
     flex: 1,
   },
   scheduleCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     gap: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   scheduleDay: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -1135,20 +1140,22 @@ const styles = StyleSheet.create({
   scheduleTimeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   scheduleLocation: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   examCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     gap: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   examTypeBadge: {
     paddingHorizontal: 12,
@@ -1177,16 +1184,16 @@ const styles = StyleSheet.create({
   examDate: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   examTime: {
     fontSize: 12,
-    color: '#667eea',
+    color: colors.primary,
     marginTop: 2,
   },
   examLocation: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   eligibilityCard: {
@@ -1197,34 +1204,34 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   eligibleCard: {
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    backgroundColor: colors.success + '15',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: colors.success + '30',
   },
   ineligibleCard: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: colors.error + '15',
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: colors.error + '30',
   },
   eligibilityText: {
     fontSize: 14,
     flex: 1,
   },
   eligibleText: {
-    color: '#10b981',
+    color: colors.success,
   },
   ineligibleTextModal: {
-    color: '#ef4444',
+    color: colors.error,
   },
   modalFooter: {
     padding: 20,
     paddingBottom: 40,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.divider,
   },
   enrollButton: {
     flexDirection: 'row',
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
@@ -1233,7 +1240,7 @@ const styles = StyleSheet.create({
   },
   unenrollButton: {
     flexDirection: 'row',
-    backgroundColor: '#ef4444',
+    backgroundColor: colors.error,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
@@ -1242,12 +1249,14 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     paddingVertical: 16,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   buttonText: {
     fontSize: 16,
@@ -1257,6 +1266,6 @@ const styles = StyleSheet.create({
   disabledButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
 });

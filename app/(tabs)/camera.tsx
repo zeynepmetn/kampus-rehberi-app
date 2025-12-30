@@ -1,9 +1,10 @@
 import { useAuth } from '@/context/AuthContext';
 import { useCafeteria } from '@/context/CafeteriaContext';
 import { useTheme } from '@/context/ThemeContext';
+import { CafeteriaMenu } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -18,12 +19,17 @@ const { width } = Dimensions.get('window');
 
 type Tab = 'menu' | 'posts' | 'events';
 
+// Türkçe gün isimleri
+const dayNames = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+const shortDayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+
 export default function CameraScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
-  const { posts, menuItems, snacks, events, toggleLike, addComment } = useCafeteria();
+  const { posts, menuItems, weeklyMenu, snacks, events, toggleLike, addComment } = useCafeteria();
   const { student } = useAuth();
   const { colors, isDark } = useTheme();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [selectedMenuDate, setSelectedMenuDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const styles = createStyles(colors, isDark);
 
@@ -47,19 +53,104 @@ export default function CameraScreen() {
     return date.toLocaleDateString('tr-TR');
   };
 
+  // İki haftalık tarih listesi oluştur
+  const twoWeekDates = useMemo(() => {
+    const dates: { date: string; dayName: string; shortDay: string; dayNum: number; isToday: boolean }[] = [];
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    for (let i = 0; i < 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      dates.push({
+        date: dateStr,
+        dayName: dayNames[date.getDay()],
+        shortDay: shortDayNames[date.getDay()],
+        dayNum: date.getDate(),
+        isToday: dateStr === todayStr,
+      });
+    }
+    return dates;
+  }, []);
+
+  // Seçili günün menüsünü al
+  const selectedDayMenu = useMemo(() => {
+    return weeklyMenu[selectedMenuDate] || [];
+  }, [weeklyMenu, selectedMenuDate]);
+
+  // Seçili günün bilgisi
+  const selectedDayInfo = useMemo(() => {
+    return twoWeekDates.find(d => d.date === selectedMenuDate);
+  }, [twoWeekDates, selectedMenuDate]);
+
   const renderMenu = () => (
     <View style={styles.menuContainer}>
-      <Text style={styles.menuTitle}>📅 Bugünün Menüsü</Text>
+      {/* Hafta Seçici */}
+      <View style={styles.weekSelectorContainer}>
+        <Text style={styles.weekSelectorTitle}>📅 İki Haftalık Menü</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.weekSelector}
+        >
+          {twoWeekDates.map((day) => {
+            const hasMenu = weeklyMenu[day.date] && weeklyMenu[day.date].length > 0;
+            const isSelected = selectedMenuDate === day.date;
+            
+            return (
+              <TouchableOpacity
+                key={day.date}
+                style={[
+                  styles.dayButton,
+                  isSelected && styles.dayButtonActive,
+                  day.isToday && !isSelected && styles.dayButtonToday,
+                ]}
+                onPress={() => setSelectedMenuDate(day.date)}
+              >
+                <Text style={[
+                  styles.dayButtonShort,
+                  isSelected && styles.dayButtonTextActive,
+                ]}>
+                  {day.shortDay}
+                </Text>
+                <Text style={[
+                  styles.dayButtonNum,
+                  isSelected && styles.dayButtonTextActive,
+                ]}>
+                  {day.dayNum}
+                </Text>
+                {hasMenu && (
+                  <View style={[
+                    styles.menuDot,
+                    isSelected && styles.menuDotActive,
+                  ]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Seçili Gün Başlığı */}
+      <View style={styles.selectedDayHeader}>
+        <Text style={styles.selectedDayTitle}>
+          {selectedDayInfo?.isToday ? '🍽️ Bugünün Menüsü' : `🍽️ ${selectedDayInfo?.dayName} Menüsü`}
+        </Text>
+        <Text style={styles.selectedDayDate}>
+          {new Date(selectedMenuDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+        </Text>
+      </View>
       
-      {menuItems.length === 0 ? (
+      {selectedDayMenu.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="restaurant-outline" size={48} color={colors.textTertiary} />
-          <Text style={styles.emptyText}>Bugün için menü bulunmuyor</Text>
+          <Text style={styles.emptyText}>Bu gün için menü bulunmuyor</Text>
         </View>
       ) : (
         <>
           {['main', 'side', 'dessert', 'drink'].map((category) => {
-            const items = menuItems.filter((item) => item.category === category);
+            const items = selectedDayMenu.filter((item: CafeteriaMenu) => item.category === category);
             if (items.length === 0) return null;
             
             const categoryTitles: Record<string, string> = {
@@ -72,7 +163,7 @@ export default function CameraScreen() {
             return (
               <View key={category} style={styles.menuSection}>
                 <Text style={styles.menuSectionTitle}>{categoryTitles[category]}</Text>
-                {items.map((item) => (
+                {items.map((item: CafeteriaMenu) => (
                   <View key={item.id} style={styles.menuItem}>
                     <View style={styles.menuItemInfo}>
                       <Text style={styles.menuItemName}>{item.name}</Text>
@@ -80,7 +171,7 @@ export default function CameraScreen() {
                     </View>
                     <View style={styles.menuItemPrice}>
                       <Text style={styles.priceText}>₺{item.price}</Text>
-                      {item.available ? (
+                      {item.available === 1 ? (
                         <View style={styles.availableBadge}>
                           <Text style={styles.availableText}>Mevcut</Text>
                         </View>
@@ -96,9 +187,9 @@ export default function CameraScreen() {
             );
           })}
           
-          {snacks.length > 0 && (
+          {snacks.length > 0 && selectedDayInfo?.isToday && (
             <View style={styles.menuSection}>
-              <Text style={styles.menuSectionTitle}>🍿 Aperatifler</Text>
+              <Text style={styles.menuSectionTitle}>🍿 Aperatifler (Her Gün)</Text>
               {snacks.map((snack) => (
                 <View key={snack.id} style={styles.menuItem}>
                   <View style={styles.menuItemInfo}>
@@ -398,7 +489,78 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   // Menu styles
   menuContainer: {
-    gap: 20,
+    gap: 16,
+  },
+  weekSelectorContainer: {
+    marginBottom: 8,
+  },
+  weekSelectorTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  weekSelector: {
+    paddingVertical: 4,
+    gap: 8,
+  },
+  dayButton: {
+    width: 52,
+    height: 70,
+    borderRadius: 14,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  dayButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  dayButtonToday: {
+    borderColor: colors.secondary,
+    borderWidth: 2,
+  },
+  dayButtonShort: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.textTertiary,
+    marginBottom: 2,
+  },
+  dayButtonNum: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  dayButtonTextActive: {
+    color: '#fff',
+  },
+  menuDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.secondary,
+    marginTop: 4,
+  },
+  menuDotActive: {
+    backgroundColor: '#fff',
+  },
+  selectedDayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  selectedDayTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  selectedDayDate: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   menuTitle: {
     fontSize: 20,

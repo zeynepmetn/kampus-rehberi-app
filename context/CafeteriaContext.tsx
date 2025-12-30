@@ -1,4 +1,5 @@
 import {
+  CafeteriaMenu,
   CafeteriaSnack,
   createAnnouncementComment,
   deleteAnnouncementComment,
@@ -8,6 +9,7 @@ import {
   getCafeteriaSnacks,
   getEvents,
   getTodayCafeteriaMenu,
+  getTwoWeekCafeteriaMenu,
   toggleAnnouncementLike
 } from '@/database/database';
 import { CafeteriaPost, Comment, MenuItem } from '@/types';
@@ -18,6 +20,7 @@ import { useDatabase } from './DatabaseContext';
 interface CafeteriaContextType {
   posts: CafeteriaPost[];
   menuItems: MenuItem[];
+  weeklyMenu: Record<string, CafeteriaMenu[]>;
   snacks: CafeteriaSnack[];
   events: Event[];
   isLoading: boolean;
@@ -34,6 +37,7 @@ export function CafeteriaProvider({ children }: { children: ReactNode }) {
   const { student } = useAuth();
   const [posts, setPosts] = useState<CafeteriaPost[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [weeklyMenu, setWeeklyMenu] = useState<Record<string, CafeteriaMenu[]>>({});
   const [snacks, setSnacks] = useState<CafeteriaSnack[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +48,7 @@ export function CafeteriaProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
 
-      // Load menu
+      // Load today's menu
       const menu = await getTodayCafeteriaMenu();
       const formattedMenu: MenuItem[] = menu.map((item) => ({
         id: item.id!.toString(),
@@ -55,6 +59,10 @@ export function CafeteriaProvider({ children }: { children: ReactNode }) {
         available: item.available === 1,
       }));
       setMenuItems(formattedMenu);
+
+      // Load 2 week menu
+      const twoWeekMenu = await getTwoWeekCafeteriaMenu();
+      setWeeklyMenu(twoWeekMenu);
 
       // Load snacks
       const snacksData = await getCafeteriaSnacks();
@@ -156,6 +164,7 @@ export function CafeteriaProvider({ children }: { children: ReactNode }) {
       value={{
         posts,
         menuItems,
+        weeklyMenu,
         snacks,
         events,
         isLoading,

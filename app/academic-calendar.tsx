@@ -1,4 +1,5 @@
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import { AcademicCalendar, getAcademicCalendar } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +7,6 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -14,8 +14,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
 
 const eventTypes = [
   { key: 'all', label: 'Tümü', color: '#667eea' },
@@ -63,10 +61,13 @@ const getDaysUntil = (date: Date) => {
 
 export default function AcademicCalendarScreen() {
   const { isReady } = useDatabase();
+  const { colors, isDark } = useTheme();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [academicEvents, setAcademicEvents] = useState<AcademicCalendar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const styles = createStyles(colors, isDark);
 
   const loadData = async () => {
     if (!isReady) return;
@@ -122,7 +123,7 @@ export default function AcademicCalendarScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity 
             style={styles.backButton}
@@ -135,14 +136,14 @@ export default function AcademicCalendarScreen() {
             <Text style={styles.headerSubtitle}>2024-2025 Güz Dönemi</Text>
           </View>
           <View style={styles.headerIcon}>
-            <Ionicons name="calendar" size={28} color="#667eea" />
+            <Ionicons name="calendar" size={28} color="#fff" />
           </View>
         </View>
       </LinearGradient>
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#667eea" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <ScrollView
@@ -150,7 +151,7 @@ export default function AcademicCalendarScreen() {
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+            <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
           }
         >
         {/* Yaklaşan Etkinlikler */}
@@ -166,7 +167,7 @@ export default function AcademicCalendarScreen() {
                     <View style={styles.upcomingHeader}>
                       <Text style={styles.upcomingTitle}>{event.title}</Text>
                       <View style={[styles.daysUntilBadge, daysUntil <= 7 && styles.daysUntilBadgeUrgent]}>
-                        <Text style={styles.daysUntilText}>
+                        <Text style={[styles.daysUntilText, daysUntil <= 7 && styles.daysUntilTextUrgent]}>
                           {daysUntil === 0 ? 'Bugün' : daysUntil === 1 ? 'Yarın' : `${daysUntil} gün`}
                         </Text>
                       </View>
@@ -214,7 +215,7 @@ export default function AcademicCalendarScreen() {
             {selectedFilter === 'all' ? 'Tüm Etkinlikler' : eventTypes.find(t => t.key === selectedFilter)?.label}
           </Text>
           
-          {sortedEvents.map((event, index) => {
+          {sortedEvents.map((event) => {
             const daysUntil = getDaysUntil(event.date);
             const isPast = daysUntil < 0;
             
@@ -268,7 +269,7 @@ export default function AcademicCalendarScreen() {
                   </Text>
                   {!isPast && daysUntil <= 14 && (
                     <View style={styles.countdownContainer}>
-                      <Ionicons name="time-outline" size={12} color="#4ECDC4" />
+                      <Ionicons name="time-outline" size={12} color={colors.secondary} />
                       <Text style={styles.countdownText}>
                         {daysUntil === 0 ? 'Bugün!' : daysUntil === 1 ? 'Yarın!' : `${daysUntil} gün kaldı`}
                       </Text>
@@ -285,12 +286,12 @@ export default function AcademicCalendarScreen() {
           <Text style={styles.sectionTitle}>Dönem Özeti</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryCard}>
-              <Ionicons name="school-outline" size={24} color="#4ECDC4" />
+              <Ionicons name="school-outline" size={24} color={colors.secondary} />
               <Text style={styles.summaryValue}>16 Hafta</Text>
               <Text style={styles.summaryLabel}>Ders Süresi</Text>
             </View>
             <View style={styles.summaryCard}>
-              <Ionicons name="document-text-outline" size={24} color="#FF6B6B" />
+              <Ionicons name="document-text-outline" size={24} color={colors.accent} />
               <Text style={styles.summaryValue}>2 Hafta</Text>
               <Text style={styles.summaryLabel}>Vize Dönemi</Text>
             </View>
@@ -307,10 +308,10 @@ export default function AcademicCalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -340,14 +341,14 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   headerIcon: {
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -366,7 +367,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   // Yaklaşan Etkinlikler
@@ -375,12 +376,12 @@ const styles = StyleSheet.create({
   },
   upcomingCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginBottom: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   upcomingAccent: {
     width: 4,
@@ -397,26 +398,29 @@ const styles = StyleSheet.create({
   upcomingTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     flex: 1,
   },
   daysUntilBadge: {
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: colors.secondary + '20',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   daysUntilBadgeUrgent: {
-    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+    backgroundColor: colors.accent + '20',
   },
   daysUntilText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: colors.secondary,
+  },
+  daysUntilTextUrgent: {
+    color: colors.accent,
   },
   upcomingDate: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 4,
   },
   // Filtreler
@@ -430,13 +434,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   filterButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   filterButtonTextActive: {
     color: '#fff',
@@ -447,19 +453,19 @@ const styles = StyleSheet.create({
   },
   eventCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   eventCardPast: {
     opacity: 0.5,
   },
   eventDateContainer: {
     width: 70,
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: colors.primary + '15',
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -467,24 +473,24 @@ const styles = StyleSheet.create({
   eventDay: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#667eea',
+    color: colors.primary,
   },
   eventDayPast: {
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   eventMonth: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#667eea',
+    color: colors.primary,
     textTransform: 'uppercase',
   },
   eventMonthPast: {
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   eventDateDivider: {
     width: 20,
     height: 1,
-    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: colors.primary + '40',
     marginVertical: 4,
   },
   eventContent: {
@@ -514,13 +520,13 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   eventTitlePast: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   courseBadge: {
-    backgroundColor: 'rgba(247, 220, 111, 0.2)',
+    backgroundColor: '#F7DC6F20',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -532,11 +538,11 @@ const styles = StyleSheet.create({
   },
   eventDescription: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
     lineHeight: 18,
   },
   eventDescriptionPast: {
-    color: '#475569',
+    color: colors.textTertiary,
   },
   countdownContainer: {
     flexDirection: 'row',
@@ -547,7 +553,7 @@ const styles = StyleSheet.create({
   countdownText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: colors.secondary,
   },
   // Dönem Özeti
   summarySection: {
@@ -559,24 +565,23 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     marginTop: 8,
   },
   summaryLabel: {
     fontSize: 11,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 4,
     textAlign: 'center',
   },
 });
-

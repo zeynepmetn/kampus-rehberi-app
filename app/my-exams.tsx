@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import { getExamsByStudent, Exam } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,10 +25,13 @@ const examTypes = [
 export default function MyExamsScreen() {
   const { isReady } = useDatabase();
   const { student } = useAuth();
+  const { colors, isDark } = useTheme();
   const [exams, setExams] = useState<Exam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+
+  const styles = createStyles(colors, isDark);
 
   useEffect(() => {
     if (isReady && student?.id) {
@@ -94,7 +98,7 @@ export default function MyExamsScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -102,7 +106,7 @@ export default function MyExamsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -146,12 +150,12 @@ export default function MyExamsScreen() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
         {exams.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={64} color="#64748b" />
+            <Ionicons name="document-text-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyText}>
               {selectedFilter ? 'Bu türde sınav bulunmuyor' : 'Sınav bulunmuyor'}
             </Text>
@@ -165,7 +169,7 @@ export default function MyExamsScreen() {
             const isUpcoming = daysUntil > 0 && daysUntil <= 7;
 
             return (
-              <View key={exam.id} style={styles.examCard}>
+              <View key={exam.id} style={[styles.examCard, isPast && styles.examCardPast]}>
                 <View style={styles.examHeader}>
                   <View style={styles.examInfo}>
                     <Text style={styles.courseCode}>{exam.course_code}</Text>
@@ -180,26 +184,26 @@ export default function MyExamsScreen() {
 
                 <View style={styles.examDetails}>
                   <View style={styles.detailItem}>
-                    <Ionicons name="calendar-outline" size={16} color="#667eea" />
+                    <Ionicons name="calendar-outline" size={16} color={colors.primary} />
                     <Text style={styles.detailText}>{formatDate(exam.exam_date)}</Text>
                   </View>
                   <View style={styles.detailItem}>
-                    <Ionicons name="time-outline" size={16} color="#667eea" />
+                    <Ionicons name="time-outline" size={16} color={colors.primary} />
                     <Text style={styles.detailText}>
                       {exam.start_time} - {exam.end_time}
                     </Text>
                   </View>
                   <View style={styles.detailItem}>
-                    <Ionicons name="location-outline" size={16} color="#667eea" />
+                    <Ionicons name="location-outline" size={16} color={colors.primary} />
                     <Text style={styles.detailText}>
                       {exam.classroom} • {exam.faculty}
                     </Text>
                   </View>
                 </View>
 
-                {isUpcoming && (
+                {(isUpcoming || isToday) && (
                   <View style={styles.countdownContainer}>
-                    <Ionicons name="alarm-outline" size={16} color="#4ECDC4" />
+                    <Ionicons name="alarm-outline" size={16} color={colors.secondary} />
                     <Text style={styles.countdownText}>
                       {isToday ? 'Bugün!' : daysUntil === 1 ? 'Yarın!' : `${daysUntil} gün kaldı`}
                     </Text>
@@ -220,14 +224,14 @@ export default function MyExamsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -245,7 +249,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -260,7 +264,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   filtersContainer: {
@@ -274,16 +278,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     marginRight: 8,
   },
   filterChipActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
   },
   filterChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   filterChipTextActive: {
     color: '#fff',
@@ -300,18 +304,21 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
   examCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
     position: 'relative',
+  },
+  examCardPast: {
+    opacity: 0.6,
   },
   examHeader: {
     flexDirection: 'row',
@@ -325,8 +332,8 @@ const styles = StyleSheet.create({
   courseCode: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#667eea',
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    color: colors.primary,
+    backgroundColor: colors.primary + '20',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -336,7 +343,7 @@ const styles = StyleSheet.create({
   courseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   examTypeBadge: {
     paddingHorizontal: 12,
@@ -358,13 +365,13 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   countdownContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: colors.secondary + '20',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -374,13 +381,13 @@ const styles = StyleSheet.create({
   countdownText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#4ECDC4',
+    color: colors.secondary,
   },
   pastBadge: {
     position: 'absolute',
     top: 16,
     right: 16,
-    backgroundColor: 'rgba(100, 116, 139, 0.2)',
+    backgroundColor: colors.textTertiary + '30',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -388,7 +395,6 @@ const styles = StyleSheet.create({
   pastText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
 });
-

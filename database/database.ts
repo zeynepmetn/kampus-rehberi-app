@@ -4,7 +4,7 @@ import * as SQLite from 'expo-sqlite';
 let db: SQLite.SQLiteDatabase | null = null;
 
 // Database version - increment this when schema changes
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Initialize database
 export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
@@ -1488,6 +1488,25 @@ export const getTodayCafeteriaMenu = async (): Promise<CafeteriaMenu[]> => {
   return getCafeteriaMenuByDate(today);
 };
 
+export const getTwoWeekCafeteriaMenu = async (): Promise<Record<string, CafeteriaMenu[]>> => {
+  if (!db) throw new Error('Database not initialized');
+
+  const today = new Date();
+  const result: Record<string, CafeteriaMenu[]> = {};
+
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    const menu = await getCafeteriaMenuByDate(dateStr);
+    if (menu.length > 0) {
+      result[dateStr] = menu;
+    }
+  }
+
+  return result;
+};
+
 export const updateCafeteriaMenu = async (id: number, menu: Partial<CafeteriaMenu>): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
@@ -2006,56 +2025,211 @@ export const seedSampleData = async (): Promise<void> => {
     });
   }
 
-  // Add cafeteria menu items for today
-  const today = new Date().toISOString().split('T')[0];
-  await createCafeteriaMenu({
-    name: 'Mercimek Çorbası',
-    description: 'Geleneksel Türk mercimek çorbası',
-    price: 15,
-    category: 'main',
-    available: 1,
-    menu_date: today,
-  });
-  await createCafeteriaMenu({
-    name: 'Tavuk Sote',
-    description: 'Sebzeli tavuk sote, pilav ile servis edilir',
-    price: 45,
-    category: 'main',
-    available: 1,
-    menu_date: today,
-  });
-  await createCafeteriaMenu({
-    name: 'Karnıyarık',
-    description: 'Kıymalı patlıcan dolması',
-    price: 50,
-    category: 'main',
-    available: 1,
-    menu_date: today,
-  });
-  await createCafeteriaMenu({
-    name: 'Pilav',
-    description: 'Tereyağlı pirinç pilavı',
-    price: 12,
-    category: 'side',
-    available: 1,
-    menu_date: today,
-  });
-  await createCafeteriaMenu({
-    name: 'Sütlaç',
-    description: 'Geleneksel fırın sütlaç',
-    price: 20,
-    category: 'dessert',
-    available: 1,
-    menu_date: today,
-  });
-  await createCafeteriaMenu({
-    name: 'Ayran',
-    description: 'Taze köpüklü ayran',
-    price: 8,
-    category: 'drink',
-    available: 1,
-    menu_date: today,
-  });
+  // Add cafeteria menu items for 2 weeks
+  const twoWeekMenu = [
+    // Hafta 1 - Pazartesi
+    {
+      day: 0,
+      items: [
+        { name: 'Mercimek Çorbası', description: 'Geleneksel Türk mercimek çorbası, limon ile', price: 15, category: 'main' },
+        { name: 'Tavuk Sote', description: 'Sebzeli tavuk sote, pilav ile servis edilir', price: 45, category: 'main' },
+        { name: 'Karnıyarık', description: 'Kıymalı patlıcan dolması, yoğurt ile', price: 50, category: 'main' },
+        { name: 'Pilav', description: 'Tereyağlı pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Cacık', description: 'Taze salatalık ve yoğurt', price: 10, category: 'side' },
+        { name: 'Sütlaç', description: 'Geleneksel fırın sütlaç', price: 20, category: 'dessert' },
+        { name: 'Ayran', description: 'Taze köpüklü ayran', price: 8, category: 'drink' },
+        { name: 'Şalgam', description: 'Acılı şalgam suyu', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Salı
+    {
+      day: 1,
+      items: [
+        { name: 'Ezogelin Çorbası', description: 'Bulgur ve mercimekli çorba', price: 15, category: 'main' },
+        { name: 'İzmir Köfte', description: 'Patatesli köfte, domates soslu', price: 55, category: 'main' },
+        { name: 'Zeytinyağlı Fasulye', description: 'Taze fasulye, zeytinyağlı', price: 35, category: 'main' },
+        { name: 'Bulgur Pilavı', description: 'Domatesli bulgur pilavı', price: 12, category: 'side' },
+        { name: 'Mevsim Salata', description: 'Taze mevsim yeşillikleri', price: 15, category: 'side' },
+        { name: 'Kazandibi', description: 'Geleneksel kazandibi tatlısı', price: 22, category: 'dessert' },
+        { name: 'Limonata', description: 'Taze sıkılmış limonata', price: 12, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Çarşamba
+    {
+      day: 2,
+      items: [
+        { name: 'Domates Çorbası', description: 'Kremalı domates çorbası', price: 15, category: 'main' },
+        { name: 'Mantı', description: 'El yapımı mantı, yoğurt ve sosla', price: 60, category: 'main' },
+        { name: 'Etli Nohut', description: 'Kuşbaşı etli nohut yemeği', price: 55, category: 'main' },
+        { name: 'Şehriye Pilavı', description: 'Şehriyeli pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Turşu', description: 'Karışık turşu', price: 8, category: 'side' },
+        { name: 'Baklava', description: 'Fıstıklı baklava (2 dilim)', price: 30, category: 'dessert' },
+        { name: 'Türk Kahvesi', description: 'Geleneksel Türk kahvesi', price: 15, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Perşembe
+    {
+      day: 3,
+      items: [
+        { name: 'Yayla Çorbası', description: 'Yoğurtlu pirinç çorbası', price: 15, category: 'main' },
+        { name: 'Döner', description: 'Tavuk döner, pilav ve salata ile', price: 65, category: 'main' },
+        { name: 'Kuru Fasulye', description: 'Geleneksel kuru fasulye, pilav ile', price: 45, category: 'main' },
+        { name: 'Makarna', description: 'Domates soslu makarna', price: 20, category: 'side' },
+        { name: 'Coban Salata', description: 'Domates, salatalık, biber', price: 15, category: 'side' },
+        { name: 'Revani', description: 'Şerbetli irmik tatlısı', price: 18, category: 'dessert' },
+        { name: 'Ayran', description: 'Taze köpüklü ayran', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Cuma
+    {
+      day: 4,
+      items: [
+        { name: 'Tarhana Çorbası', description: 'Ev yapımı tarhana çorbası', price: 15, category: 'main' },
+        { name: 'Balık Tava', description: 'Mevsim balığı, salata ile', price: 70, category: 'main' },
+        { name: 'Sebzeli Güveç', description: 'Karışık sebze güveci', price: 40, category: 'main' },
+        { name: 'Patates Püresi', description: 'Tereyağlı patates püresi', price: 12, category: 'side' },
+        { name: 'Havuç Tarator', description: 'Yoğurtlu havuç salatası', price: 12, category: 'side' },
+        { name: 'Profiterol', description: 'Çikolatalı profiterol', price: 25, category: 'dessert' },
+        { name: 'Çay', description: 'Demli Türk çayı', price: 5, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Cumartesi
+    {
+      day: 5,
+      items: [
+        { name: 'Şehriye Çorbası', description: 'Tavuklu şehriye çorbası', price: 15, category: 'main' },
+        { name: 'Lahmacun', description: 'Çıtır lahmacun (2 adet)', price: 50, category: 'main' },
+        { name: 'Mercimek Köfte', description: 'Ev yapımı mercimek köftesi', price: 35, category: 'main' },
+        { name: 'Bulgur Pilavı', description: 'Tereyağlı bulgur pilavı', price: 12, category: 'side' },
+        { name: 'Piyaz', description: 'Tahinli piyaz', price: 15, category: 'side' },
+        { name: 'Künefe', description: 'Sıcak künefe, dondurma ile', price: 35, category: 'dessert' },
+        { name: 'Ayran', description: 'Taze köpüklü ayran', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 1 - Pazar
+    {
+      day: 6,
+      items: [
+        { name: 'Tavuk Suyu Çorba', description: 'Şifalı tavuk suyu çorbası', price: 18, category: 'main' },
+        { name: 'Izgara Köfte', description: 'Izgara köfte, pilav ve salata', price: 60, category: 'main' },
+        { name: 'Zeytinyağlı Yaprak Sarma', description: 'Zeytinyağlı yaprak sarması', price: 40, category: 'main' },
+        { name: 'Pilav', description: 'Tereyağlı pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Yoğurt', description: 'Süzme yoğurt', price: 10, category: 'side' },
+        { name: 'Aşure', description: 'Geleneksel aşure', price: 20, category: 'dessert' },
+        { name: 'Limonata', description: 'Taze sıkılmış limonata', price: 12, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Pazartesi
+    {
+      day: 7,
+      items: [
+        { name: 'Düğün Çorbası', description: 'Yoğurtlu düğün çorbası', price: 18, category: 'main' },
+        { name: 'Adana Kebap', description: 'Acılı Adana kebap, lavaş ile', price: 75, category: 'main' },
+        { name: 'İmam Bayıldı', description: 'Zeytinyağlı imam bayıldı', price: 45, category: 'main' },
+        { name: 'Şehriye Pilavı', description: 'Şehriyeli pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Ezme Salata', description: 'Acılı ezme salata', price: 12, category: 'side' },
+        { name: 'Tulumba', description: 'Şerbetli tulumba tatlısı', price: 18, category: 'dessert' },
+        { name: 'Şalgam', description: 'Acılı şalgam suyu', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Salı
+    {
+      day: 8,
+      items: [
+        { name: 'Paça Çorbası', description: 'Geleneksel paça çorbası', price: 20, category: 'main' },
+        { name: 'Tas Kebabı', description: 'Kuşbaşı et, sebze ile', price: 70, category: 'main' },
+        { name: 'Musakka', description: 'Patlıcanlı musakka', price: 50, category: 'main' },
+        { name: 'Bulgur Pilavı', description: 'Domatesli bulgur pilavı', price: 12, category: 'side' },
+        { name: 'Semizotu Salatası', description: 'Yoğurtlu semizotu', price: 12, category: 'side' },
+        { name: 'Güllaç', description: 'Geleneksel güllaç', price: 22, category: 'dessert' },
+        { name: 'Ayran', description: 'Taze köpüklü ayran', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Çarşamba
+    {
+      day: 9,
+      items: [
+        { name: 'Sebze Çorbası', description: 'Karışık sebze çorbası', price: 15, category: 'main' },
+        { name: 'Pide', description: 'Kıymalı pide', price: 55, category: 'main' },
+        { name: 'Etli Bezelye', description: 'Kuşbaşı etli bezelye', price: 50, category: 'main' },
+        { name: 'Pilav', description: 'Tereyağlı pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Mor Lahana Salatası', description: 'Taze mor lahana salatası', price: 12, category: 'side' },
+        { name: 'Keşkül', description: 'Sütlü keşkül tatlısı', price: 20, category: 'dessert' },
+        { name: 'Türk Kahvesi', description: 'Geleneksel Türk kahvesi', price: 15, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Perşembe
+    {
+      day: 10,
+      items: [
+        { name: 'Mercimek Çorbası', description: 'Geleneksel mercimek çorbası', price: 15, category: 'main' },
+        { name: 'Tantuni', description: 'Mersin tantuni, dürüm', price: 55, category: 'main' },
+        { name: 'Dolma', description: 'Etli biber dolması', price: 45, category: 'main' },
+        { name: 'Makarna', description: 'Fırın makarna', price: 22, category: 'side' },
+        { name: 'Cacık', description: 'Taze salatalık ve yoğurt', price: 10, category: 'side' },
+        { name: 'Kadayıf', description: 'Tel kadayıf, kaymak ile', price: 28, category: 'dessert' },
+        { name: 'Çay', description: 'Demli Türk çayı', price: 5, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Cuma
+    {
+      day: 11,
+      items: [
+        { name: 'Balık Çorbası', description: 'Kremalı balık çorbası', price: 22, category: 'main' },
+        { name: 'Levrek Izgara', description: 'Izgara levrek, salata ile', price: 80, category: 'main' },
+        { name: 'Midye Dolma', description: 'Pilavlı midye dolma (6 adet)', price: 45, category: 'main' },
+        { name: 'Patates Kızartması', description: 'Çıtır patates kızartması', price: 15, category: 'side' },
+        { name: 'Roka Salatası', description: 'Parmesan ve cevizli roka', price: 18, category: 'side' },
+        { name: 'Tiramisu', description: 'İtalyan tiramisu', price: 30, category: 'dessert' },
+        { name: 'Limonata', description: 'Taze sıkılmış limonata', price: 12, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Cumartesi
+    {
+      day: 12,
+      items: [
+        { name: 'Ezogelin Çorbası', description: 'Bulgur ve mercimekli çorba', price: 15, category: 'main' },
+        { name: 'Çiğ Köfte Dürüm', description: 'Acılı çiğ köfte dürüm', price: 40, category: 'main' },
+        { name: 'Hünkar Beğendi', description: 'Kuşbaşı etli hünkar beğendi', price: 65, category: 'main' },
+        { name: 'Bulgur Pilavı', description: 'Tereyağlı bulgur pilavı', price: 12, category: 'side' },
+        { name: 'Humus', description: 'Nohut ezmesi, zeytinyağlı', price: 15, category: 'side' },
+        { name: 'Şekerpare', description: 'Şerbetli şekerpare', price: 18, category: 'dessert' },
+        { name: 'Ayran', description: 'Taze köpüklü ayran', price: 8, category: 'drink' },
+      ]
+    },
+    // Hafta 2 - Pazar
+    {
+      day: 13,
+      items: [
+        { name: 'Toyga Çorbası', description: 'Yoğurtlu toyga çorbası', price: 18, category: 'main' },
+        { name: 'Kuzu Tandır', description: 'Fırında kuzu tandır', price: 85, category: 'main' },
+        { name: 'Zeytinyağlı Enginar', description: 'Zeytinyağlı enginar', price: 45, category: 'main' },
+        { name: 'Pilav', description: 'Tereyağlı pirinç pilavı', price: 12, category: 'side' },
+        { name: 'Yoğurt', description: 'Süzme yoğurt', price: 10, category: 'side' },
+        { name: 'Lokma', description: 'Taze lokma tatlısı', price: 20, category: 'dessert' },
+        { name: 'Şerbet', description: 'Osmanlı şerbeti', price: 12, category: 'drink' },
+      ]
+    },
+  ];
+
+  // İki haftalık menüyü ekle
+  const today = new Date();
+  for (const dayMenu of twoWeekMenu) {
+    const menuDate = new Date(today);
+    menuDate.setDate(today.getDate() + dayMenu.day);
+    const dateStr = menuDate.toISOString().split('T')[0];
+
+    for (const item of dayMenu.items) {
+      await createCafeteriaMenu({
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        available: 1,
+        menu_date: dateStr,
+      });
+    }
+  }
 
   // Add cafeteria snacks
   await createCafeteriaSnack({
