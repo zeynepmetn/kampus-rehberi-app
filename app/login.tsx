@@ -1,6 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
 import { useDatabase } from '@/context/DatabaseContext';
-import { useTheme } from '@/context/ThemeContext';
 import { Department, getDepartments } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,7 +24,6 @@ type AuthMode = 'login' | 'register';
 export default function LoginScreen() {
   const { isReady } = useDatabase();
   const { login, register, isLoading } = useAuth();
-  const { colors, isDark } = useTheme();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -43,8 +41,6 @@ export default function LoginScreen() {
   const [classYear, setClassYear] = useState('1');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const styles = createStyles(colors, isDark);
 
   useEffect(() => {
     if (isReady) {
@@ -116,7 +112,7 @@ export default function LoginScreen() {
     const result = await login(studentNumber.trim(), password);
 
     if (result.success) {
-      // Admin girişi ise admin paneline yönlendir
+      // Admin ise admin paneline, değilse ana sayfaya yönlendir
       if (result.isAdmin) {
         router.replace('/admin');
       } else {
@@ -164,20 +160,15 @@ export default function LoginScreen() {
   if (!isReady) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#667eea" />
         <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
 
-  // Login sayfası için gradient renkleri
-  const loginGradient: [string, string, string] = isDark 
-    ? ['#1a1a2e', '#16213e', '#0f3460'] 
-    : ['#667eea', '#764ba2', '#667eea'];
-
   return (
     <LinearGradient
-      colors={loginGradient}
+      colors={['#1a1a2e', '#16213e', '#0f3460']}
       style={styles.container}
     >
       <KeyboardAvoidingView
@@ -205,12 +196,12 @@ export default function LoginScreen() {
               <>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="card-outline" size={22} color="#94a3b8" />
                   </View>
                   <TextInput
                     style={[styles.input, errors.studentNumber && styles.inputError]}
                     placeholder="Öğrenci Numarası"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor="#64748b"
                     value={studentNumber}
                     onChangeText={setStudentNumber}
                     keyboardType="numeric"
@@ -221,12 +212,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="lock-closed-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="lock-closed-outline" size={22} color="#94a3b8" />
                   </View>
                   <TextInput
                     style={[styles.input, errors.password && styles.inputError]}
                     placeholder="Şifre"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor="#64748b"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -265,7 +256,7 @@ export default function LoginScreen() {
                     <TextInput
                       style={[styles.input, styles.inputSmall, errors.firstName && styles.inputError]}
                       placeholder="Ad"
-                      placeholderTextColor={colors.placeholder}
+                      placeholderTextColor="#64748b"
                       value={firstName}
                       onChangeText={setFirstName}
                     />
@@ -274,7 +265,7 @@ export default function LoginScreen() {
                     <TextInput
                       style={[styles.input, styles.inputSmall, errors.lastName && styles.inputError]}
                       placeholder="Soyad"
-                      placeholderTextColor={colors.placeholder}
+                      placeholderTextColor="#64748b"
                       value={lastName}
                       onChangeText={setLastName}
                     />
@@ -286,12 +277,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="card-outline" size={22} color="#94a3b8" />
                   </View>
                   <TextInput
                     style={[styles.input, errors.studentNumber && styles.inputError]}
                     placeholder="Öğrenci Numarası"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor="#64748b"
                     value={studentNumber}
                     onChangeText={setStudentNumber}
                     keyboardType="numeric"
@@ -302,12 +293,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="mail-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="mail-outline" size={22} color="#94a3b8" />
                   </View>
                   <TextInput
                     style={[styles.input, errors.email && styles.inputError]}
                     placeholder="E-posta"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor="#64748b"
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -318,12 +309,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="lock-closed-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="lock-closed-outline" size={22} color="#94a3b8" />
                   </View>
                   <TextInput
                     style={[styles.input, errors.password && styles.inputError]}
                     placeholder="Şifre"
-                    placeholderTextColor={colors.placeholder}
+                    placeholderTextColor="#64748b"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -336,12 +327,12 @@ export default function LoginScreen() {
                   onPress={() => setShowDepartmentPicker(true)}
                 >
                   <View style={styles.inputIcon}>
-                    <Ionicons name="school-outline" size={22} color={colors.textSecondary} />
+                    <Ionicons name="school-outline" size={22} color="#94a3b8" />
                   </View>
                   <Text style={[styles.input, styles.pickerText]}>
                     {selectedDepartment?.name || 'Bölüm Seçin'}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+                  <Ionicons name="chevron-down" size={20} color="#94a3b8" />
                 </TouchableOpacity>
                 {errors.department && <Text style={styles.errorText}>{errors.department}</Text>}
 
@@ -427,7 +418,7 @@ export default function LoginScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Bölüm Seçin</Text>
               <TouchableOpacity onPress={() => setShowDepartmentPicker(false)}>
-                <Ionicons name="close" size={24} color={colors.text} />
+                <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalList}>
@@ -448,7 +439,7 @@ export default function LoginScreen() {
                     <Text style={styles.modalItemSubtext}>{dept.faculty}</Text>
                   </View>
                   {selectedDepartment?.id === dept.id && (
-                    <Ionicons name="checkmark" size={24} color={colors.primary} />
+                    <Ionicons name="checkmark" size={24} color="#667eea" />
                   )}
                 </TouchableOpacity>
               ))}
@@ -460,18 +451,18 @@ export default function LoginScreen() {
   );
 }
 
-const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#0f172a',
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
     marginTop: 12,
   },
   keyboardView: {
@@ -491,12 +482,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(102, 126, 234, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(102, 126, 234, 0.5)',
   },
   title: {
     fontSize: 32,
@@ -506,20 +497,15 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#94a3b8',
     marginTop: 8,
   },
   formContainer: {
-    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0 : 0.1,
-    shadowRadius: 12,
-    elevation: isDark ? 0 : 5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   row: {
     flexDirection: 'row',
@@ -529,11 +515,11 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   inputIcon: {
     paddingLeft: 14,
@@ -544,28 +530,28 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 14,
     fontSize: 15,
-    color: colors.inputText,
+    color: '#fff',
   },
   inputSmall: {
     paddingLeft: 14,
   },
   inputError: {
-    borderColor: colors.error,
+    borderColor: '#ef4444',
   },
   pickerButton: {
     paddingRight: 14,
   },
   pickerText: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
   },
   errorText: {
-    color: colors.error,
+    color: '#ef4444',
     fontSize: 12,
     marginBottom: 8,
     marginLeft: 8,
   },
   yearLabel: {
-    color: colors.textSecondary,
+    color: '#94a3b8',
     fontSize: 14,
     marginRight: 12,
   },
@@ -573,19 +559,16 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: colors.inputBackground,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
   },
   yearButtonActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: '#667eea',
   },
   yearButtonText: {
-    color: colors.textTertiary,
+    color: '#64748b',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -616,7 +599,7 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     gap: 20,
   },
   switchText: {
-    color: colors.primary,
+    color: '#667eea',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -625,22 +608,22 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: '#64748b',
     fontSize: 14,
   },
   versionText: {
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: '#475569',
     fontSize: 12,
     marginTop: 4,
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: '#1a1a2e',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -651,12 +634,12 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: '#fff',
   },
   modalList: {
     padding: 16,
@@ -666,24 +649,23 @@ const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: colors.card,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
   },
   modalItemActive: {
-    backgroundColor: colors.primary + '15',
-    borderColor: colors.primary + '40',
+    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(102, 126, 234, 0.3)',
   },
   modalItemText: {
     fontSize: 15,
-    color: colors.text,
+    color: '#fff',
     fontWeight: '500',
   },
   modalItemSubtext: {
     fontSize: 12,
-    color: colors.textTertiary,
+    color: '#64748b',
     marginTop: 2,
   },
 });

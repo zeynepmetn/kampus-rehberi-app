@@ -5,6 +5,7 @@ import {
     getEvents,
     updateEvent,
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -23,6 +24,9 @@ import {
 } from 'react-native';
 
 export default function EventsManagement() {
+    const { colors, isDark } = useTheme();
+    const styles = createStyles(colors, isDark);
+    
     const [events, setEvents] = useState<Event[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -176,7 +180,7 @@ export default function EventsManagement() {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+            <LinearGradient colors={colors.headerGradient} style={styles.header}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -373,14 +377,14 @@ export default function EventsManagement() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0f172a',
+        backgroundColor: colors.background,
     },
     loadingContainer: {
         flex: 1,
-        backgroundColor: '#0f172a',
+        backgroundColor: colors.background,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -427,7 +431,7 @@ const styles = StyleSheet.create({
         paddingVertical: 60,
     },
     emptyText: {
-        color: '#64748b',
+        color: colors.textTertiary,
         fontSize: 14,
         marginTop: 12,
     },
@@ -446,12 +450,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     eventCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: colors.card,
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: colors.cardBorder,
     },
     eventHeader: {
         flexDirection: 'row',
@@ -465,7 +469,7 @@ const styles = StyleSheet.create({
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#fff',
+        color: colors.text,
         marginBottom: 6,
     },
     eventOrganizer: {
@@ -487,19 +491,19 @@ const styles = StyleSheet.create({
     },
     eventDateMonth: {
         fontSize: 11,
-        color: '#94a3b8',
+        color: colors.textSecondary,
         fontWeight: '600',
         marginTop: 2,
     },
     eventDescription: {
         fontSize: 14,
-        color: '#94a3b8',
+        color: colors.textSecondary,
         lineHeight: 20,
         marginBottom: 12,
     },
     eventFooter: {
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.05)',
+        borderTopColor: colors.cardBorder,
         paddingTop: 12,
     },
     eventMeta: {
@@ -513,7 +517,7 @@ const styles = StyleSheet.create({
     },
     eventMetaText: {
         fontSize: 13,
-        color: '#64748b',
+        color: colors.textTertiary,
     },
     eventActions: {
         flexDirection: 'row',
@@ -526,7 +530,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 4,
         paddingVertical: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
         borderRadius: 8,
     },
     actionText: {
@@ -539,7 +543,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContainer: {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: colors.card,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         maxHeight: '70%',
@@ -550,12 +554,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+        borderBottomColor: colors.cardBorder,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#fff',
+        color: colors.text,
     },
     formContainer: {
         padding: 20,
@@ -568,17 +572,17 @@ const styles = StyleSheet.create({
     },
     formLabel: {
         fontSize: 13,
-        color: '#94a3b8',
+        color: colors.textSecondary,
         marginBottom: 8,
     },
     formInput: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
         borderRadius: 10,
         padding: 12,
-        color: '#fff',
+        color: colors.text,
         fontSize: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: colors.cardBorder,
     },
     saveButton: {
         backgroundColor: '#667eea',

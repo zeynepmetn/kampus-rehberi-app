@@ -4,6 +4,7 @@ import {
     getCoursesByDepartment,
     getDepartments
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -22,6 +23,9 @@ import {
 } from 'react-native';
 
 export default function DepartmentsManagement() {
+  const { colors, isDark } = useTheme();
+  const styles = createStyles(colors, isDark);
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -114,7 +118,7 @@ export default function DepartmentsManagement() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -122,7 +126,7 @@ export default function DepartmentsManagement() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -139,12 +143,12 @@ export default function DepartmentsManagement() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
         {departments.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="business-outline" size={64} color="#64748b" />
+            <Ionicons name="business-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyText}>Bölüm bulunmuyor</Text>
             <TouchableOpacity style={styles.emptyButton} onPress={() => setShowModal(true)}>
               <Ionicons name="add" size={20} color="#fff" />
@@ -194,7 +198,7 @@ export default function DepartmentsManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Yeni Bölüm</Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -206,7 +210,7 @@ export default function DepartmentsManagement() {
                   value={formData.code}
                   onChangeText={(v) => setFormData({ ...formData, code: v })}
                   placeholder="BM"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                   autoCapitalize="characters"
                 />
               </View>
@@ -218,7 +222,7 @@ export default function DepartmentsManagement() {
                   value={formData.name}
                   onChangeText={(v) => setFormData({ ...formData, name: v })}
                   placeholder="Bilgisayar Mühendisliği"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -229,7 +233,7 @@ export default function DepartmentsManagement() {
                   value={formData.faculty}
                   onChangeText={(v) => setFormData({ ...formData, faculty: v })}
                   placeholder="Mühendislik Fakültesi"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -244,14 +248,14 @@ export default function DepartmentsManagement() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -298,7 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
@@ -317,12 +321,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -331,7 +335,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   codeBadge: {
-    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -344,18 +348,18 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   faculty: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginBottom: 12,
   },
   cardActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.cardBorder,
     paddingTop: 12,
     gap: 8,
   },
@@ -366,7 +370,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 8,
   },
   actionText: {
@@ -379,7 +383,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -389,12 +393,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.cardBorder,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   formContainer: {
     padding: 20,
@@ -404,17 +408,17 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
   },
   saveButton: {
     backgroundColor: '#667eea',
@@ -429,4 +433,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

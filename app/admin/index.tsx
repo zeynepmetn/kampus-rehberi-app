@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useTheme, ThemeMode } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -87,8 +88,18 @@ const menuItems: AdminMenuItem[] = [
   },
 ];
 
+// Tema seçenekleri
+const themeOptions: { key: ThemeMode; label: string; icon: string }[] = [
+  { key: 'light', label: 'Açık', icon: 'sunny' },
+  { key: 'dark', label: 'Koyu', icon: 'moon' },
+  { key: 'system', label: 'Sistem', icon: 'phone-portrait' },
+];
+
 export default function AdminDashboard() {
   const { logout } = useAuth();
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
+
+  const styles = createStyles(colors, isDark);
 
   const handleLogout = () => {
     logout();
@@ -98,7 +109,7 @@ export default function AdminDashboard() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <View style={styles.adminBadge}>
@@ -137,7 +148,7 @@ export default function AdminDashboard() {
               <Text style={styles.menuTitle}>{item.title}</Text>
               <Text style={styles.menuDescription}>{item.description}</Text>
               <View style={styles.menuArrow}>
-                <Ionicons name="chevron-forward" size={20} color="#64748b" />
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
               </View>
             </TouchableOpacity>
           ))}
@@ -158,6 +169,35 @@ export default function AdminDashboard() {
           </View>
         </View>
 
+        {/* Theme Switcher */}
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Tema Ayarları</Text>
+        <View style={styles.themeContainer}>
+          {themeOptions.map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.themeOption,
+                themeMode === option.key && styles.themeOptionActive,
+              ]}
+              onPress={() => setThemeMode(option.key)}
+            >
+              <Ionicons
+                name={option.icon as any}
+                size={24}
+                color={themeMode === option.key ? '#667eea' : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.themeOptionText,
+                  themeMode === option.key && styles.themeOptionTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Help */}
         <View style={styles.helpCard}>
           <Ionicons name="information-circle" size={24} color="#667eea" />
@@ -174,10 +214,10 @@ export default function AdminDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -209,7 +249,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   logoutButton: {
@@ -230,18 +270,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   menuGrid: {
     gap: 12,
   },
   menuCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
     position: 'relative',
   },
   menuIcon: {
@@ -255,12 +295,12 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   menuDescription: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   menuArrow: {
     position: 'absolute',
@@ -274,16 +314,16 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   statLabel: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 8,
   },
   statValue: {
@@ -294,13 +334,13 @@ const styles = StyleSheet.create({
   },
   helpCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.08)',
     borderRadius: 16,
     padding: 16,
     marginTop: 24,
     gap: 12,
     borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.2)',
+    borderColor: isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)',
   },
   helpContent: {
     flex: 1,
@@ -308,13 +348,39 @@ const styles = StyleSheet.create({
   helpTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   helpText: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     lineHeight: 18,
   },
+  themeContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  themeOption: {
+    flex: 1,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  themeOptionActive: {
+    borderColor: '#667eea',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)',
+  },
+  themeOptionText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  themeOptionTextActive: {
+    color: '#667eea',
+    fontWeight: '600',
+  },
 });
-

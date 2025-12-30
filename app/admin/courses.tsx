@@ -11,6 +11,7 @@ import {
     getDepartments,
     updateCourse,
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -31,6 +32,9 @@ import {
 const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
 
 export default function CoursesManagement() {
+  const { colors, isDark } = useTheme();
+  const styles = createStyles(colors, isDark);
+
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -280,7 +284,7 @@ export default function CoursesManagement() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -288,7 +292,7 @@ export default function CoursesManagement() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -320,12 +324,12 @@ export default function CoursesManagement() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
         {courses.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="book-outline" size={64} color="#64748b" />
+            <Ionicons name="book-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyText}>Bu bölümde ders bulunmuyor</Text>
             <TouchableOpacity
               style={styles.emptyButton}
@@ -405,7 +409,7 @@ export default function CoursesManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Bölüm Seçin</Text>
               <TouchableOpacity onPress={() => setShowDepartmentPicker(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
             <ScrollView>
@@ -446,7 +450,7 @@ export default function CoursesManagement() {
                 {editingCourse ? 'Ders Düzenle' : 'Yeni Ders'}
               </Text>
               <TouchableOpacity onPress={() => setShowCourseModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -459,7 +463,7 @@ export default function CoursesManagement() {
                     value={courseForm.code}
                     onChangeText={(v) => setCourseForm({ ...courseForm, code: v })}
                     placeholder="BM101"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
@@ -470,7 +474,7 @@ export default function CoursesManagement() {
                     onChangeText={(v) => setCourseForm({ ...courseForm, quota: v })}
                     keyboardType="numeric"
                     placeholder="40"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -482,7 +486,7 @@ export default function CoursesManagement() {
                   value={courseForm.name}
                   onChangeText={(v) => setCourseForm({ ...courseForm, name: v })}
                   placeholder="Programlamaya Giriş"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -493,7 +497,7 @@ export default function CoursesManagement() {
                   value={courseForm.instructor}
                   onChangeText={(v) => setCourseForm({ ...courseForm, instructor: v })}
                   placeholder="Prof. Dr. Ali Yılmaz"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -557,7 +561,7 @@ export default function CoursesManagement() {
                     onChangeText={(v) => setCourseForm({ ...courseForm, credits: v })}
                     keyboardType="numeric"
                     placeholder="3"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
@@ -568,7 +572,7 @@ export default function CoursesManagement() {
                     onChangeText={(v) => setCourseForm({ ...courseForm, ects: v })}
                     keyboardType="numeric"
                     placeholder="5"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -620,7 +624,7 @@ export default function CoursesManagement() {
                   value={courseForm.description}
                   onChangeText={(v) => setCourseForm({ ...courseForm, description: v })}
                   placeholder="Ders açıklaması..."
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                   multiline
                 />
               </View>
@@ -647,7 +651,7 @@ export default function CoursesManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Ders Programı</Text>
               <TouchableOpacity onPress={() => setShowScheduleModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -712,7 +716,7 @@ export default function CoursesManagement() {
                     value={scheduleForm.startTime}
                     onChangeText={(v) => setScheduleForm({ ...scheduleForm, startTime: v })}
                     placeholder="09:00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
@@ -722,7 +726,7 @@ export default function CoursesManagement() {
                     value={scheduleForm.endTime}
                     onChangeText={(v) => setScheduleForm({ ...scheduleForm, endTime: v })}
                     placeholder="11:00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -734,7 +738,7 @@ export default function CoursesManagement() {
                   value={scheduleForm.classroom}
                   onChangeText={(v) => setScheduleForm({ ...scheduleForm, classroom: v })}
                   placeholder="A-301"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -745,7 +749,7 @@ export default function CoursesManagement() {
                   value={scheduleForm.faculty}
                   onChangeText={(v) => setScheduleForm({ ...scheduleForm, faculty: v })}
                   placeholder="Mühendislik Fakültesi"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -760,14 +764,14 @@ export default function CoursesManagement() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -830,7 +834,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
@@ -849,12 +853,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   courseCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   courseHeader: {
     flexDirection: 'row',
@@ -863,7 +867,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   courseCodeBadge: {
-    backgroundColor: 'rgba(102, 126, 234, 0.2)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
@@ -879,20 +883,20 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   mandatoryBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.15)',
   },
   electiveBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.15)',
   },
   typeBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   courseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 8,
   },
   courseInfo: {
@@ -900,17 +904,17 @@ const styles = StyleSheet.create({
   },
   courseInfoText: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   instructorText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   courseActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.cardBorder,
     paddingTop: 12,
     gap: 8,
   },
@@ -921,7 +925,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 8,
   },
   actionText: {
@@ -935,7 +939,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -946,12 +950,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.cardBorder,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   modalItem: {
     flexDirection: 'row',
@@ -960,14 +964,14 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
     borderRadius: 12,
   },
   modalItemActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)',
   },
   modalItemText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 15,
   },
   formContainer: {
@@ -981,7 +985,7 @@ const styles = StyleSheet.create({
   formSectionTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginTop: 16,
     marginBottom: 12,
   },
@@ -993,17 +997,17 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -1013,13 +1017,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
   },
   selectButtonActive: {
     backgroundColor: '#667eea',
   },
   selectButtonText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -1047,20 +1051,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
     padding: 12,
     borderRadius: 10,
     marginBottom: 8,
   },
   existingItemTitle: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     fontWeight: '500',
   },
   existingItemSubtitle: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 12,
     marginTop: 2,
   },
 });
-

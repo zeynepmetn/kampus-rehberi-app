@@ -7,6 +7,7 @@ import {
   Student,
   updateStudent,
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -25,6 +26,9 @@ import {
 } from 'react-native';
 
 export default function StudentsManagement() {
+  const { colors, isDark } = useTheme();
+  const styles = createStyles(colors, isDark);
+
   const [students, setStudents] = useState<Student[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -180,7 +184,7 @@ export default function StudentsManagement() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -188,7 +192,7 @@ export default function StudentsManagement() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -205,12 +209,12 @@ export default function StudentsManagement() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
         {students.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={64} color="#64748b" />
+            <Ionicons name="people-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyText}>Öğrenci bulunmuyor</Text>
             <TouchableOpacity style={styles.emptyButton} onPress={() => openModal()}>
               <Ionicons name="add" size={20} color="#fff" />
@@ -239,12 +243,12 @@ export default function StudentsManagement() {
 
               <View style={styles.studentDetails}>
                 <View style={styles.detailRow}>
-                  <Ionicons name="business-outline" size={16} color="#64748b" />
+                  <Ionicons name="business-outline" size={16} color={colors.textTertiary} />
                   <Text style={styles.detailText}>{student.department_name}</Text>
                 </View>
                 {student.email && (
                   <View style={styles.detailRow}>
-                    <Ionicons name="mail-outline" size={16} color="#64748b" />
+                    <Ionicons name="mail-outline" size={16} color={colors.textTertiary} />
                     <Text style={styles.detailText}>{student.email}</Text>
                   </View>
                 )}
@@ -271,8 +275,6 @@ export default function StudentsManagement() {
         )}
       </ScrollView>
 
-      {/* Department Picker Modal - Inline in Form */}
-
       {/* Student Form Modal */}
       <Modal
         visible={showModal}
@@ -287,7 +289,7 @@ export default function StudentsManagement() {
                 {editingStudent ? 'Öğrenci Düzenle' : 'Yeni Öğrenci'}
               </Text>
               <TouchableOpacity onPress={() => setShowModal(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -300,7 +302,7 @@ export default function StudentsManagement() {
                     value={formData.first_name}
                     onChangeText={(v) => setFormData({ ...formData, first_name: v })}
                     placeholder="Ahmet"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
@@ -310,7 +312,7 @@ export default function StudentsManagement() {
                     value={formData.last_name}
                     onChangeText={(v) => setFormData({ ...formData, last_name: v })}
                     placeholder="Yılmaz"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -322,7 +324,7 @@ export default function StudentsManagement() {
                   value={formData.student_number}
                   onChangeText={(v) => setFormData({ ...formData, student_number: v })}
                   placeholder="2021123456"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                   keyboardType="numeric"
                   editable={!editingStudent}
                 />
@@ -337,7 +339,7 @@ export default function StudentsManagement() {
                   value={formData.password}
                   onChangeText={(v) => setFormData({ ...formData, password: v })}
                   placeholder="••••••••"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                   secureTextEntry
                 />
               </View>
@@ -345,13 +347,13 @@ export default function StudentsManagement() {
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Bölüm *</Text>
                 <TouchableOpacity
-                  style={styles.formInput}
+                  style={styles.formInputButton}
                   onPress={() => setShowDepartmentPicker(!showDepartmentPicker)}
                 >
                   <Text style={[styles.formInputText, !selectedDepartment && styles.placeholder]}>
                     {selectedDepartment?.name || 'Bölüm Seçin'}
                   </Text>
-                  <Ionicons name={showDepartmentPicker ? "chevron-up" : "chevron-down"} size={20} color="#64748b" />
+                  <Ionicons name={showDepartmentPicker ? "chevron-up" : "chevron-down"} size={20} color={colors.textTertiary} />
                 </TouchableOpacity>
                 
                 {/* Inline Department Picker */}
@@ -421,7 +423,7 @@ export default function StudentsManagement() {
                     value={formData.gno}
                     onChangeText={(v) => setFormData({ ...formData, gno: v })}
                     placeholder="0.00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                     keyboardType="decimal-pad"
                   />
                 </View>
@@ -432,7 +434,7 @@ export default function StudentsManagement() {
                     value={formData.yno}
                     onChangeText={(v) => setFormData({ ...formData, yno: v })}
                     placeholder="0.00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                     keyboardType="decimal-pad"
                   />
                 </View>
@@ -451,14 +453,14 @@ export default function StudentsManagement() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -505,7 +507,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
@@ -524,12 +526,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   studentCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   studentHeader: {
     marginBottom: 12,
@@ -540,7 +542,7 @@ const styles = StyleSheet.create({
   studentName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   studentNumber: {
@@ -553,18 +555,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
   },
   gpaBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   studentDetails: {
     marginBottom: 12,
@@ -577,12 +579,12 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   studentActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.cardBorder,
     paddingTop: 12,
     gap: 8,
   },
@@ -593,7 +595,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 8,
   },
   actionText: {
@@ -606,7 +608,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -617,29 +619,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.cardBorder,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
-  },
-  modalItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-  },
-  modalItemActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
-  },
-  modalItemText: {
-    color: '#fff',
-    fontSize: 15,
+    color: colors.text,
   },
   formContainer: {
     padding: 20,
@@ -652,35 +637,42 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
+  },
+  formInputButton: {
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   formInputText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     flex: 1,
   },
   placeholder: {
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   inlinePicker: {
     marginTop: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
     overflow: 'hidden',
   },
   inlinePickerScroll: {
@@ -692,17 +684,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.cardBorder,
   },
   inlinePickerItemActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)',
   },
   inlinePickerText: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
     fontSize: 14,
   },
   inlinePickerTextActive: {
-    color: '#fff',
+    color: colors.text,
     fontWeight: '600',
   },
   buttonGroup: {
@@ -713,13 +705,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
   },
   selectButtonActive: {
     backgroundColor: '#667eea',
   },
   selectButtonText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -741,4 +733,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

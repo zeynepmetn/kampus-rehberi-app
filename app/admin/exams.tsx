@@ -9,6 +9,7 @@ import {
     getDepartments,
     updateExam,
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -33,6 +34,9 @@ const examTypes = [
 ];
 
 export default function ExamsManagement() {
+  const { colors, isDark } = useTheme();
+  const styles = createStyles(colors, isDark);
+
   const [exams, setExams] = useState<Exam[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -250,7 +254,7 @@ export default function ExamsManagement() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -258,7 +262,7 @@ export default function ExamsManagement() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -334,7 +338,7 @@ export default function ExamsManagement() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor="#667eea" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
         }
       >
         {exams.length === 0 ? (
@@ -427,7 +431,7 @@ export default function ExamsManagement() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Ders Seçin</Text>
               <TouchableOpacity onPress={() => setShowCoursePicker(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
             <ScrollView>
@@ -484,7 +488,7 @@ export default function ExamsManagement() {
                 setEditingExam(null);
                 resetForm();
               }}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -553,7 +557,7 @@ export default function ExamsManagement() {
                   value={examForm.examDate}
                   onChangeText={(v) => setExamForm({ ...examForm, examDate: v })}
                   placeholder="2025-01-15"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -565,7 +569,7 @@ export default function ExamsManagement() {
                     value={examForm.startTime}
                     onChangeText={(v) => setExamForm({ ...examForm, startTime: v })}
                     placeholder="10:00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View style={[styles.formGroup, { flex: 1 }]}>
@@ -575,7 +579,7 @@ export default function ExamsManagement() {
                     value={examForm.endTime}
                     onChangeText={(v) => setExamForm({ ...examForm, endTime: v })}
                     placeholder="12:00"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -587,7 +591,7 @@ export default function ExamsManagement() {
                   value={examForm.classroom}
                   onChangeText={(v) => setExamForm({ ...examForm, classroom: v })}
                   placeholder="S-101"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -598,7 +602,7 @@ export default function ExamsManagement() {
                   value={examForm.faculty}
                   onChangeText={(v) => setExamForm({ ...examForm, faculty: v })}
                   placeholder="Mühendislik Fakültesi"
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={colors.textTertiary}
                 />
               </View>
 
@@ -615,14 +619,14 @@ export default function ExamsManagement() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -671,7 +675,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     marginRight: 8,
   },
   filterChipActive: {
@@ -680,7 +684,7 @@ const styles = StyleSheet.create({
   filterChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   filterChipTextActive: {
     color: '#fff',
@@ -697,7 +701,7 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 14,
     marginTop: 12,
   },
@@ -716,12 +720,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   examCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   examHeader: {
     flexDirection: 'row',
@@ -741,7 +745,7 @@ const styles = StyleSheet.create({
   courseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   examTypeBadge: {
     paddingHorizontal: 10,
@@ -763,12 +767,12 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   examActions: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.cardBorder,
     paddingTop: 12,
     gap: 8,
   },
@@ -779,7 +783,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 8,
   },
   actionText: {
@@ -792,7 +796,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -803,12 +807,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.cardBorder,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   modalItem: {
     flexDirection: 'row',
@@ -817,19 +821,19 @@ const styles = StyleSheet.create({
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
     borderRadius: 12,
   },
   modalItemActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.15)' : 'rgba(102, 126, 234, 0.1)',
   },
   modalItemText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 15,
     fontWeight: '600',
   },
   modalItemSubtext: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 12,
     marginTop: 4,
   },
@@ -844,28 +848,28 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   formInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   formInputText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 14,
     flex: 1,
   },
   placeholder: {
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -875,13 +879,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
   },
   selectButtonActive: {
     backgroundColor: '#667eea',
   },
   selectButtonText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',

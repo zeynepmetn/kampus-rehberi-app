@@ -8,19 +8,23 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNotifications } from '@/context/NotificationContext';
+import { useTheme } from '@/context/ThemeContext';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { NotificationType } from '@/types';
 
-const typeConfig: Record<NotificationType, { icon: string; color: string; bgColor: string }> = {
-  event: { icon: 'calendar', color: '#667eea', bgColor: 'rgba(102, 126, 234, 0.15)' },
-  reminder: { icon: 'alarm', color: '#4ECDC4', bgColor: 'rgba(78, 205, 196, 0.15)' },
-  cafeteria: { icon: 'restaurant', color: '#FF6B6B', bgColor: 'rgba(255, 107, 107, 0.15)' },
-  announcement: { icon: 'megaphone', color: '#F7DC6F', bgColor: 'rgba(247, 220, 111, 0.15)' },
+const typeConfig: Record<NotificationType, { icon: string; color: string }> = {
+  event: { icon: 'calendar', color: '#667eea' },
+  reminder: { icon: 'alarm', color: '#4ECDC4' },
+  cafeteria: { icon: 'restaurant', color: '#FF6B6B' },
+  announcement: { icon: 'megaphone', color: '#F7DC6F' },
 };
 
 export default function NotificationsScreen() {
   const { notifications, markAsRead, markAllAsRead, clearNotification, unreadCount } = useNotifications();
+  const { colors, isDark } = useTheme();
+  
+  const styles = createStyles(colors, isDark);
 
   const formatTimestamp = (date: Date) => {
     const now = new Date();
@@ -43,7 +47,7 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerRow}>
           <TouchableOpacity
             style={styles.backButton}
@@ -79,7 +83,7 @@ export default function NotificationsScreen() {
         {notifications.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="notifications-off-outline" size={64} color="#64748b" />
+              <Ionicons name="notifications-off-outline" size={64} color={colors.textTertiary} />
             </View>
             <Text style={styles.emptyTitle}>Bildirim Yok</Text>
             <Text style={styles.emptySubtitle}>
@@ -99,7 +103,7 @@ export default function NotificationsScreen() {
                 onPress={() => handleNotificationPress(notification.id)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.notificationIcon, { backgroundColor: config.bgColor }]}>
+                <View style={[styles.notificationIcon, { backgroundColor: config.color + '20' }]}>
                   <Ionicons name={config.icon as any} size={22} color={config.color} />
                 </View>
                 <View style={styles.notificationContent}>
@@ -118,7 +122,7 @@ export default function NotificationsScreen() {
                   style={styles.deleteButton}
                   onPress={() => clearNotification(notification.id)}
                 >
-                  <Ionicons name="close" size={18} color="#64748b" />
+                  <Ionicons name="close" size={18} color={colors.textTertiary} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -129,10 +133,10 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -198,7 +202,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -206,25 +210,25 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 8,
   },
   notificationCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   notificationUnread: {
-    backgroundColor: 'rgba(102, 126, 234, 0.08)',
-    borderColor: 'rgba(102, 126, 234, 0.2)',
+    backgroundColor: isDark ? 'rgba(102, 126, 234, 0.08)' : 'rgba(102, 126, 234, 0.1)',
+    borderColor: isDark ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.3)',
   },
   notificationIcon: {
     width: 48,
@@ -246,7 +250,7 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     flex: 1,
   },
   unreadDot: {
@@ -257,23 +261,24 @@ const styles = StyleSheet.create({
   },
   notificationMessage: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 4,
     lineHeight: 18,
   },
   notificationTime: {
     fontSize: 11,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 8,
   },
   deleteButton: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
 });
-

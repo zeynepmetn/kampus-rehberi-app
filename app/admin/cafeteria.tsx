@@ -10,6 +10,7 @@ import {
     updateCafeteriaMenu,
     updateCafeteriaSnack
 } from '@/database/database';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -30,6 +31,9 @@ import {
 type Tab = 'menu' | 'snacks';
 
 export default function CafeteriaManagement() {
+    const { colors, isDark } = useTheme();
+    const styles = createStyles(colors, isDark);
+    
     const [activeTab, setActiveTab] = useState<Tab>('menu');
     const [menuItems, setMenuItems] = useState<CafeteriaMenu[]>([]);
     const [snacks, setSnacks] = useState<CafeteriaSnack[]>([]);
@@ -281,7 +285,7 @@ export default function CafeteriaManagement() {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+            <LinearGradient colors={colors.headerGradient} style={styles.header}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                         <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -681,14 +685,14 @@ export default function CafeteriaManagement() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0f172a',
+        backgroundColor: colors.background,
     },
     loadingContainer: {
         flex: 1,
-        backgroundColor: '#0f172a',
+        backgroundColor: colors.background,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -738,7 +742,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     },
     tabActive: {
         backgroundColor: '#667eea',
@@ -746,7 +750,7 @@ const styles = StyleSheet.create({
     tabText: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#64748b',
+        color: colors.textTertiary,
     },
     tabTextActive: {
         color: '#fff',
@@ -758,17 +762,17 @@ const styles = StyleSheet.create({
     },
     dateLabel: {
         fontSize: 13,
-        color: '#94a3b8',
+        color: colors.textSecondary,
     },
     dateInput: {
         flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
         borderRadius: 8,
         padding: 10,
-        color: '#fff',
+        color: colors.text,
         fontSize: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: colors.cardBorder,
     },
     content: {
         flex: 1,
@@ -782,7 +786,7 @@ const styles = StyleSheet.create({
         paddingVertical: 60,
     },
     emptyText: {
-        color: '#64748b',
+        color: colors.textTertiary,
         fontSize: 14,
         marginTop: 12,
     },
@@ -801,12 +805,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     itemCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: colors.card,
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: colors.cardBorder,
     },
     itemHeader: {
         marginBottom: 12,
@@ -817,12 +821,12 @@ const styles = StyleSheet.create({
     itemName: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#fff',
+        color: colors.text,
         marginBottom: 4,
     },
     itemDescription: {
         fontSize: 13,
-        color: '#64748b',
+        color: colors.textTertiary,
         marginBottom: 4,
     },
     itemBadges: {
@@ -860,7 +864,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.05)',
+        borderTopColor: colors.cardBorder,
         paddingTop: 12,
     },
     priceText: {
@@ -878,7 +882,7 @@ const styles = StyleSheet.create({
         gap: 4,
         paddingVertical: 8,
         paddingHorizontal: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
         borderRadius: 8,
     },
     actionText: {
@@ -891,7 +895,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContainer: {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: colors.card,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         maxHeight: '70%',
@@ -902,12 +906,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+        borderBottomColor: colors.cardBorder,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#fff',
+        color: colors.text,
     },
     formContainer: {
         padding: 20,
@@ -920,17 +924,17 @@ const styles = StyleSheet.create({
     },
     formLabel: {
         fontSize: 13,
-        color: '#94a3b8',
+        color: colors.textSecondary,
         marginBottom: 8,
     },
     formInput: {
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
         borderRadius: 10,
         padding: 12,
-        color: '#fff',
+        color: colors.text,
         fontSize: 14,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderColor: colors.cardBorder,
     },
     buttonGroup: {
         flexDirection: 'row',
@@ -941,13 +945,13 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
     },
     selectButtonActive: {
         backgroundColor: '#667eea',
     },
     selectButtonText: {
-        color: '#64748b',
+        color: colors.textTertiary,
         fontSize: 12,
         fontWeight: '600',
         textAlign: 'center',
@@ -962,7 +966,7 @@ const styles = StyleSheet.create({
     },
     checkboxLabel: {
         fontSize: 14,
-        color: '#fff',
+        color: colors.text,
     },
     saveButton: {
         backgroundColor: '#667eea',
