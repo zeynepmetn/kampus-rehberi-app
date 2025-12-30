@@ -4,7 +4,7 @@ import * as SQLite from 'expo-sqlite';
 let db: SQLite.SQLiteDatabase | null = null;
 
 // Database version - increment this when schema changes
-const DB_VERSION = 5;
+const DB_VERSION = 8;
 
 // Initialize database
 export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
@@ -1893,8 +1893,86 @@ export const seedSampleData = async (): Promise<void> => {
     faculty: 'Mühendislik Fakültesi'
   });
 
-  // Create sample courses for Bilgisayar Mühendisliği
-  const courses = [
+  const makineMuh = await createDepartment({
+    code: 'MM',
+    name: 'Makine Mühendisliği',
+    faculty: 'Mühendislik Fakültesi'
+  });
+
+  const insaatMuh = await createDepartment({
+    code: 'IM',
+    name: 'İnşaat Mühendisliği',
+    faculty: 'Mühendislik Fakültesi'
+  });
+
+  const endüstriMuh = await createDepartment({
+    code: 'EM',
+    name: 'Endüstri Mühendisliği',
+    faculty: 'Mühendislik Fakültesi'
+  });
+
+
+  // Helper function for creating courses with schedules and exams
+  const createCourseWithDetails = async (
+    course: any,
+    departmentId: number,
+    index: number,
+    days: string[],
+    times: string[],
+    facultyName: string,
+    buildingPrefix: string
+  ) => {
+    const courseId = await createCourse({
+      ...course,
+      department_id: departmentId,
+      quota: 40
+    });
+
+    // Add schedule
+    const dayIndex = index % 5;
+    const timeIndex = Math.floor(index / 5) % times.length;
+    await createCourseSchedule({
+      course_id: courseId,
+      day: days[dayIndex],
+      start_time: times[timeIndex],
+      end_time: addHours(times[timeIndex], 2),
+      classroom: `${buildingPrefix}-${100 + (index % 10)}`,
+      faculty: facultyName
+    });
+
+    // Add exams
+    const examDate = new Date();
+    examDate.setDate(examDate.getDate() + 30 + index * 2);
+    
+    await createExam({
+      course_id: courseId,
+      exam_type: 'midterm',
+      exam_date: examDate.toISOString().split('T')[0],
+      start_time: '10:00',
+      end_time: '12:00',
+      classroom: `S-${100 + (index % 5)}`,
+      faculty: facultyName
+    });
+
+    examDate.setDate(examDate.getDate() + 45);
+    await createExam({
+      course_id: courseId,
+      exam_type: 'final',
+      exam_date: examDate.toISOString().split('T')[0],
+      start_time: '10:00',
+      end_time: '12:00',
+      classroom: `S-${100 + (index % 5)}`,
+      faculty: facultyName
+    });
+
+    return courseId;
+  };
+
+  const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
+  const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
+
+  // ==================== BİLGİSAYAR MÜHENDİSLİĞİ DERSLERİ ====================
+  const bmCourses = [
     // 1. Sınıf - Güz
     { code: 'BM101', name: 'Programlamaya Giriş', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Ali Yılmaz' },
     { code: 'BM103', name: 'Matematik I', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Ayşe Kara' },
@@ -1928,55 +2006,131 @@ export const seedSampleData = async (): Promise<void> => {
   ];
 
   const courseIds: Record<string, number> = {};
-  const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma'];
-  const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
-
-  for (let i = 0; i < courses.length; i++) {
-    const course = courses[i];
-    const courseId = await createCourse({
-      ...course,
-      department_id: bilgisayarMuh,
-      quota: 40
-    });
-    courseIds[course.code] = courseId;
-
-    // Add schedule
-    const dayIndex = i % 5;
-    const timeIndex = Math.floor(i / 5) % times.length;
-    await createCourseSchedule({
-      course_id: courseId,
-      day: days[dayIndex],
-      start_time: times[timeIndex],
-      end_time: addHours(times[timeIndex], 2),
-      classroom: `A-${100 + (i % 10)}`,
-      faculty: 'Mühendislik Fakültesi'
-    });
-
-    // Add exams
-    const examDate = new Date();
-    examDate.setDate(examDate.getDate() + 30 + i * 2);
-    
-    await createExam({
-      course_id: courseId,
-      exam_type: 'midterm',
-      exam_date: examDate.toISOString().split('T')[0],
-      start_time: '10:00',
-      end_time: '12:00',
-      classroom: `S-${100 + (i % 5)}`,
-      faculty: 'Mühendislik Fakültesi'
-    });
-
-    examDate.setDate(examDate.getDate() + 45);
-    await createExam({
-      course_id: courseId,
-      exam_type: 'final',
-      exam_date: examDate.toISOString().split('T')[0],
-      start_time: '10:00',
-      end_time: '12:00',
-      classroom: `S-${100 + (i % 5)}`,
-      faculty: 'Mühendislik Fakültesi'
-    });
+  for (let i = 0; i < bmCourses.length; i++) {
+    const courseId = await createCourseWithDetails(bmCourses[i], bilgisayarMuh, i, days, times, 'Mühendislik Fakültesi', 'A');
+    courseIds[bmCourses[i].code] = courseId;
   }
+
+  // ==================== ELEKTRİK-ELEKTRONİK MÜHENDİSLİĞİ DERSLERİ ====================
+  const eemCourses = [
+    // 1. Sınıf - Güz
+    { code: 'EEM101', name: 'Elektrik Devre Temelleri', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Kemal Öztürk' },
+    { code: 'EEM103', name: 'Matematik I', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Fatma Yıldız' },
+    { code: 'EEM105', name: 'Fizik I', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Ahmet Kaya' },
+    { code: 'EEM107', name: 'Bilgisayar Programlama', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Murat Şen' },
+    // 1. Sınıf - Bahar
+    { code: 'EEM102', name: 'Devre Analizi', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Kemal Öztürk' },
+    { code: 'EEM104', name: 'Matematik II', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Fatma Yıldız' },
+    { code: 'EEM106', name: 'Fizik II', class_year: 1, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Ahmet Kaya' },
+    { code: 'EEM108', name: 'Diferansiyel Denklemler', class_year: 1, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Aylin Arslan' },
+    // 2. Sınıf - Güz
+    { code: 'EEM201', name: 'Elektronik I', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Serkan Aydın' },
+    { code: 'EEM203', name: 'Elektromanyetik Alan Teorisi', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Burak Çelik' },
+    { code: 'EEM205', name: 'Sinyaller ve Sistemler', class_year: 2, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Deniz Yılmaz' },
+    { code: 'EEM207', name: 'Sayısal Elektronik', class_year: 2, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Emre Koç' },
+    // 2. Sınıf - Bahar
+    { code: 'EEM202', name: 'Elektronik II', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Serkan Aydın' },
+    { code: 'EEM204', name: 'Elektrik Makineleri I', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Hasan Demir' },
+    { code: 'EEM206', name: 'Ölçme Tekniği', class_year: 2, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Gül Akman' },
+    { code: 'EEM208', name: 'Mikroişlemciler', class_year: 2, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Emre Koç' },
+    // 3. Sınıf - Güz
+    { code: 'EEM301', name: 'Kontrol Sistemleri', class_year: 3, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Deniz Yılmaz' },
+    { code: 'EEM303', name: 'Elektrik Makineleri II', class_year: 3, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Hasan Demir' },
+    { code: 'EEM305', name: 'Haberleşme Sistemleri', class_year: 3, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. İlker Başar' },
+    { code: 'EEM307', name: 'Güç Elektroniği', class_year: 3, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Doç. Dr. Burak Çelik' },
+    // 3. Sınıf - Bahar
+    { code: 'EEM302', name: 'Sayısal Sinyal İşleme', class_year: 3, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Deniz Yılmaz' },
+    { code: 'EEM304', name: 'Yüksek Gerilim Tekniği', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Kemal Öztürk' },
+    { code: 'EEM306', name: 'Anten ve Propagasyon', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Prof. Dr. İlker Başar' },
+    { code: 'EEM308', name: 'Gömülü Sistemler', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Dr. Emre Koç' },
+    // 4. Sınıf - Güz
+    { code: 'EEM401', name: 'Bitirme Projesi I', class_year: 4, semester: 1, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+    { code: 'EEM403', name: 'Enerji Sistemleri', class_year: 4, semester: 1, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Doç. Dr. Hasan Demir' },
+    { code: 'EEM405', name: 'Robotik', class_year: 4, semester: 1, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Dr. Murat Şen' },
+    // 4. Sınıf - Bahar
+    { code: 'EEM402', name: 'Bitirme Projesi II', class_year: 4, semester: 2, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+    { code: 'EEM404', name: 'Yenilenebilir Enerji Sistemleri', class_year: 4, semester: 2, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Doç. Dr. Burak Çelik' },
+    { code: 'EEM406', name: 'Akıllı Şebekeler', class_year: 4, semester: 2, credits: 3, ects: 5, is_mandatory: 0, instructor: 'Prof. Dr. Kemal Öztürk' },
+  ];
+
+  for (let i = 0; i < eemCourses.length; i++) {
+    await createCourseWithDetails(eemCourses[i], elektrikMuh, i, days, times, 'Mühendislik Fakültesi', 'B');
+  }
+
+  // ==================== MAKİNE MÜHENDİSLİĞİ DERSLERİ ====================
+  const mmCourses = [
+    { code: 'MM101', name: 'Statik', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Oğuz Kaya' },
+    { code: 'MM103', name: 'Matematik I', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Sema Öz' },
+    { code: 'MM105', name: 'Fizik I', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Caner Yıldırım' },
+    { code: 'MM107', name: 'Teknik Resim', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Volkan Arslan' },
+    { code: 'MM102', name: 'Dinamik', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Oğuz Kaya' },
+    { code: 'MM104', name: 'Matematik II', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Sema Öz' },
+    { code: 'MM201', name: 'Mukavemet I', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Taner Şahin' },
+    { code: 'MM203', name: 'Termodinamik I', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Cem Akar' },
+    { code: 'MM205', name: 'Malzeme Bilimi', class_year: 2, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Pınar Kılıç' },
+    { code: 'MM202', name: 'Mukavemet II', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Taner Şahin' },
+    { code: 'MM204', name: 'Termodinamik II', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Cem Akar' },
+    { code: 'MM206', name: 'Akışkanlar Mekaniği', class_year: 2, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Oğuz Kaya' },
+    { code: 'MM301', name: 'Makine Elemanları I', class_year: 3, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Cem Akar' },
+    { code: 'MM303', name: 'Isı Transferi', class_year: 3, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Taner Şahin' },
+    { code: 'MM302', name: 'Makine Elemanları II', class_year: 3, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Cem Akar' },
+    { code: 'MM304', name: 'İmal Usulleri', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Volkan Arslan' },
+    { code: 'MM401', name: 'Bitirme Projesi I', class_year: 4, semester: 1, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+    { code: 'MM402', name: 'Bitirme Projesi II', class_year: 4, semester: 2, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+  ];
+
+  for (let i = 0; i < mmCourses.length; i++) {
+    await createCourseWithDetails(mmCourses[i], makineMuh, i, days, times, 'Mühendislik Fakültesi', 'C');
+  }
+
+  // ==================== İNŞAAT MÜHENDİSLİĞİ DERSLERİ ====================
+  const imCourses = [
+    { code: 'IM101', name: 'Statik', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Erhan Koç' },
+    { code: 'IM103', name: 'Matematik I', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Melek Tan' },
+    { code: 'IM105', name: 'Yapı Malzemeleri', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Selim Yavuz' },
+    { code: 'IM102', name: 'Mukavemet', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Erhan Koç' },
+    { code: 'IM104', name: 'Matematik II', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Melek Tan' },
+    { code: 'IM201', name: 'Yapı Statiği I', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Erhan Koç' },
+    { code: 'IM203', name: 'Zemin Mekaniği', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Tolga Özdemir' },
+    { code: 'IM205', name: 'Topoğrafya', class_year: 2, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Selim Yavuz' },
+    { code: 'IM202', name: 'Yapı Statiği II', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Erhan Koç' },
+    { code: 'IM204', name: 'Betonarme I', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Tolga Özdemir' },
+    { code: 'IM301', name: 'Betonarme II', class_year: 3, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Tolga Özdemir' },
+    { code: 'IM303', name: 'Çelik Yapılar', class_year: 3, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Erhan Koç' },
+    { code: 'IM302', name: 'Temel İnşaatı', class_year: 3, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Tolga Özdemir' },
+    { code: 'IM304', name: 'Ulaştırma', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Selim Yavuz' },
+    { code: 'IM401', name: 'Bitirme Projesi I', class_year: 4, semester: 1, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+    { code: 'IM402', name: 'Bitirme Projesi II', class_year: 4, semester: 2, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+  ];
+
+  for (let i = 0; i < imCourses.length; i++) {
+    await createCourseWithDetails(imCourses[i], insaatMuh, i, days, times, 'Mühendislik Fakültesi', 'D');
+  }
+
+  // ==================== ENDÜSTRİ MÜHENDİSLİĞİ DERSLERİ ====================
+  const emCourses = [
+    { code: 'EM101', name: 'Endüstri Mühendisliğine Giriş', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Prof. Dr. Leyla Çetin' },
+    { code: 'EM103', name: 'Matematik I', class_year: 1, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Berk Yılmaz' },
+    { code: 'EM105', name: 'İstatistik I', class_year: 1, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Nil Aydın' },
+    { code: 'EM102', name: 'Programlama', class_year: 1, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Nil Aydın' },
+    { code: 'EM104', name: 'Matematik II', class_year: 1, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Berk Yılmaz' },
+    { code: 'EM201', name: 'Yöneylem Araştırması I', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Leyla Çetin' },
+    { code: 'EM203', name: 'Üretim Planlama', class_year: 2, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Berk Yılmaz' },
+    { code: 'EM205', name: 'İş Etüdü', class_year: 2, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Nil Aydın' },
+    { code: 'EM202', name: 'Yöneylem Araştırması II', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Leyla Çetin' },
+    { code: 'EM204', name: 'Kalite Kontrol', class_year: 2, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Berk Yılmaz' },
+    { code: 'EM301', name: 'Simülasyon', class_year: 3, semester: 1, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Prof. Dr. Leyla Çetin' },
+    { code: 'EM303', name: 'Tesis Planlama', class_year: 3, semester: 1, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Nil Aydın' },
+    { code: 'EM302', name: 'Tedarik Zinciri Yönetimi', class_year: 3, semester: 2, credits: 4, ects: 6, is_mandatory: 1, instructor: 'Doç. Dr. Berk Yılmaz' },
+    { code: 'EM304', name: 'Ergonomi', class_year: 3, semester: 2, credits: 3, ects: 5, is_mandatory: 1, instructor: 'Dr. Nil Aydın' },
+    { code: 'EM401', name: 'Bitirme Projesi I', class_year: 4, semester: 1, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+    { code: 'EM402', name: 'Bitirme Projesi II', class_year: 4, semester: 2, credits: 4, ects: 8, is_mandatory: 1, instructor: 'Tüm Öğretim Üyeleri' },
+  ];
+
+  for (let i = 0; i < emCourses.length; i++) {
+    await createCourseWithDetails(emCourses[i], endüstriMuh, i, days, times, 'Mühendislik Fakültesi', 'E');
+  }
+
 
   // Create sample student
   const studentId = await createStudent({
