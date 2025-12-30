@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNotifications } from '@/context/NotificationContext';
@@ -21,10 +22,17 @@ const typeConfig: Record<NotificationType, { icon: string; color: string }> = {
 };
 
 export default function NotificationsScreen() {
-  const { notifications, markAsRead, markAllAsRead, clearNotification, unreadCount } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, clearNotification, unreadCount, checkForNewNotifications } = useNotifications();
   const { colors, isDark } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
   
   const styles = createStyles(colors, isDark);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await checkForNewNotifications();
+    setRefreshing(false);
+  };
 
   const formatTimestamp = (date: Date) => {
     const now = new Date();
@@ -79,6 +87,14 @@ export default function NotificationsScreen() {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         {notifications.length === 0 ? (
           <View style={styles.emptyState}>

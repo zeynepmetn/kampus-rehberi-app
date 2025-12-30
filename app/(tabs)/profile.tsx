@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useTheme, ThemeMode } from '@/context/ThemeContext';
+import { useNotifications } from '@/context/NotificationContext';
 import { getEnrolledCourses, StudentCourse } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,6 +19,7 @@ import {
 export default function ProfileScreen() {
   const { student, settings, updateSettings, logout } = useAuth();
   const { colors, themeMode, setThemeMode, isDark } = useTheme();
+  const { unreadCount } = useNotifications();
   const [localSettings, setLocalSettings] = useState(settings);
   const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
   const [totalCredits, setTotalCredits] = useState(0);
@@ -112,6 +114,7 @@ export default function ProfileScreen() {
       label: 'Bildirimler',
       icon: 'notifications-outline',
       color: '#667eea',
+      badge: unreadCount > 0 ? `${unreadCount} yeni` : undefined,
       onPress: () => router.push('/notifications'),
     },
     {
