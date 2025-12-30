@@ -133,7 +133,7 @@ export default function AcademicCalendarScreen() {
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Akademik Takvim</Text>
-            <Text style={styles.headerSubtitle}>2024-2025 Güz Dönemi</Text>
+            <Text style={styles.headerSubtitle}>2025-2026 Akademik Yılı</Text>
           </View>
           <View style={styles.headerIcon}>
             <Ionicons name="calendar" size={28} color="#fff" />

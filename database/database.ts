@@ -4,7 +4,7 @@ import * as SQLite from 'expo-sqlite';
 let db: SQLite.SQLiteDatabase | null = null;
 
 // Database version - increment this when schema changes
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 // Initialize database
 export const initDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
@@ -2485,62 +2485,265 @@ export const seedSampleData = async (): Promise<void> => {
     organizer: 'Fotoğrafçılık Topluluğu',
   });
 
-  // Add academic calendar for 2024-2025 Fall Semester
+  // Add academic calendar for 2025-2026 Academic Year
+  
+  // === OCAK 2026 ===
   await createAcademicCalendar({
-    title: 'Güz Dönemi Başlangıcı',
-    description: '2024-2025 Güz dönemi derslerinin başlangıcı',
-    event_date: '2024-09-16',
+    title: 'Yeni Yıl',
+    description: 'Yeni yıl tatili',
+    event_date: '2026-01-01',
+    event_type: 'holiday',
+    icon: 'gift-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Bahar Döneminde Zorunlu Ortak Derslerin Programlarının Belirlenmesinin Son Günü',
+    description: 'Bahar döneminde zorunlu ortak derslerin programlarının belirlenmesi için son gün',
+    event_date: '2026-01-02',
+    event_type: 'deadline',
+    icon: 'alert-circle-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Derslerin Tamamlanması',
+    description: 'Güz dönemi derslerinin tamamlanması',
+    event_date: '2026-01-02',
     event_type: 'semester',
     icon: 'school-outline',
   });
   await createAcademicCalendar({
-    title: 'Vize Haftası',
-    description: 'Güz dönemi vize sınavları',
-    event_date: '2024-11-04',
-    event_type: 'exam',
-    icon: 'document-text-outline',
-  });
-  await createAcademicCalendar({
-    title: 'Vize Haftası Bitişi',
-    description: 'Güz dönemi vize sınavlarının bitişi',
-    event_date: '2024-11-08',
-    event_type: 'exam',
-    icon: 'document-text-outline',
-  });
-  await createAcademicCalendar({
-    title: 'Final Haftası',
+    title: 'Yarıyıl Sonu Sınavları',
     description: 'Güz dönemi final sınavları',
-    event_date: '2024-12-23',
+    event_date: '2026-01-05',
+    end_date: '2026-01-16',
     event_type: 'exam',
     icon: 'document-text-outline',
   });
   await createAcademicCalendar({
-    title: 'Final Haftası Bitişi',
-    description: 'Güz dönemi final sınavlarının bitişi',
-    event_date: '2024-12-27',
+    title: 'Bahar Döneminde Okutulacak Dersler ile Ders Sorumlularının ve Haftalık Ders Programının Belirlenmesinin Son Günü',
+    description: 'Bahar dönemi ders programının belirlenmesi için son gün',
+    event_date: '2026-01-16',
+    event_type: 'deadline',
+    icon: 'alert-circle-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Yarıyıl Tatili',
+    description: 'Güz ve Bahar dönemi arası tatil',
+    event_date: '2026-01-19',
+    end_date: '2026-02-22',
+    event_type: 'holiday',
+    icon: 'sunny-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Yarıyıl Sonu Sınav Sonuçları İlanının Son Günü',
+    description: 'Final sınav sonuçlarının ilan edilmesi için son gün',
+    event_date: '2026-01-23',
+    event_type: 'deadline',
+    icon: 'megaphone-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Güz Dönemi Bütünleme Sınavları',
+    description: 'Güz dönemi bütünleme sınavları',
+    event_date: '2026-01-26',
+    end_date: '2026-01-30',
     event_type: 'exam',
     icon: 'document-text-outline',
+  });
+
+  // === ŞUBAT 2026 ===
+  await createAcademicCalendar({
+    title: 'Bütünleme Sınav Sonuçları İlanının Son Günü',
+    description: 'Bütünleme sınav sonuçlarının ilan edilmesi için son gün',
+    event_date: '2026-02-03',
+    event_type: 'deadline',
+    icon: 'megaphone-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Tek Ders Sınavı Başvuru Tarihi',
+    description: 'Tek ders sınavı başvuruları',
+    event_date: '2026-02-04',
+    end_date: '2026-02-05',
+    event_type: 'registration',
+    icon: 'create-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Çift Anadal ve Yandal Başvuruları',
+    description: 'Çift anadal ve yandal programlarına başvuru',
+    event_date: '2026-02-09',
+    end_date: '2026-02-13',
+    event_type: 'registration',
+    icon: 'git-branch-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Öğrenci Katkı Paylarını Yatıran Öğrenciler İçin Ders Kayıtları',
+    description: 'Bahar dönemi ders kayıt işlemleri',
+    event_date: '2026-02-09',
+    end_date: '2026-02-13',
+    event_type: 'registration',
+    icon: 'clipboard-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Danışman Onayları',
+    description: 'Ders kayıtları için danışman onay süreci',
+    event_date: '2026-02-09',
+    end_date: '2026-02-19',
+    event_type: 'registration',
+    icon: 'checkmark-circle-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Çift Anadal ve Yandal Başvurularının Birimlerce Değerlendirilmesi ve İlanı',
+    description: 'Çift anadal ve yandal başvuru sonuçlarının ilanı',
+    event_date: '2026-02-16',
+    event_type: 'deadline',
+    icon: 'megaphone-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Ders Ekleme-Bırakma-Mazeretli Geç Kayıtlar',
+    description: 'Ders ekleme, bırakma ve mazeretli geç kayıt işlemleri',
+    event_date: '2026-02-17',
+    end_date: '2026-02-18',
+    event_type: 'registration',
+    icon: 'swap-horizontal-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Derslerin Başlaması',
+    description: '2025-2026 Bahar dönemi derslerinin başlangıcı',
+    event_date: '2026-02-23',
+    event_type: 'semester',
+    icon: 'school-outline',
+  });
+
+  // === MART 2026 ===
+  await createAcademicCalendar({
+    title: 'Ramazan Bayramı',
+    description: 'Ramazan Bayramı tatili',
+    event_date: '2026-03-20',
+    end_date: '2026-03-22',
+    event_type: 'holiday',
+    icon: 'moon-outline',
+  });
+
+  // === NİSAN 2026 ===
+  await createAcademicCalendar({
+    title: 'Ulusal Egemenlik ve Çocuk Bayramı',
+    description: '23 Nisan Ulusal Egemenlik ve Çocuk Bayramı',
+    event_date: '2026-04-23',
+    event_type: 'holiday',
+    icon: 'flag-outline',
+  });
+
+  // === MAYIS 2026 ===
+  await createAcademicCalendar({
+    title: '1 Mayıs Emek ve Dayanışma Günü',
+    description: 'İşçi Bayramı',
+    event_date: '2026-05-01',
+    event_type: 'holiday',
+    icon: 'people-outline',
+  });
+  await createAcademicCalendar({
+    title: '19 Mayıs Atatürk\'ü Anma Gençlik ve Spor Bayramı',
+    description: 'Gençlik ve Spor Bayramı',
+    event_date: '2026-05-19',
+    event_type: 'holiday',
+    icon: 'flag-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Kurban Bayramı',
+    description: 'Kurban Bayramı tatili',
+    event_date: '2026-05-27',
+    end_date: '2026-05-30',
+    event_type: 'holiday',
+    icon: 'moon-outline',
+  });
+
+  // === HAZİRAN 2026 ===
+  await createAcademicCalendar({
+    title: 'Derslerin Tamamlanması',
+    description: 'Bahar dönemi derslerinin tamamlanması',
+    event_date: '2026-06-12',
+    event_type: 'semester',
+    icon: 'school-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Yarıyıl Sonu Sınavları',
+    description: 'Bahar dönemi final sınavları',
+    event_date: '2026-06-15',
+    end_date: '2026-06-26',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Yaz Tatili',
+    description: '2025-2026 Akademik yılı yaz tatili',
+    event_date: '2026-06-29',
+    end_date: '2026-09-20',
+    event_type: 'holiday',
+    icon: 'sunny-outline',
+  });
+
+  // === TEMMUZ 2026 ===
+  await createAcademicCalendar({
+    title: 'Yarıyıl Sonu Sınav Sonuçları İlanının Son Günü',
+    description: 'Bahar dönemi final sınav sonuçlarının ilan edilmesi için son gün',
+    event_date: '2026-07-03',
+    event_type: 'deadline',
+    icon: 'megaphone-outline',
   });
   await createAcademicCalendar({
     title: 'Bütünleme Sınavları',
-    description: 'Güz dönemi bütünleme sınavları',
-    event_date: '2025-01-13',
+    description: 'Bahar dönemi bütünleme sınavları',
+    event_date: '2026-07-06',
+    end_date: '2026-07-10',
     event_type: 'exam',
     icon: 'document-text-outline',
   });
   await createAcademicCalendar({
-    title: 'Güz Dönemi Bitişi',
-    description: '2024-2025 Güz döneminin sona ermesi',
-    event_date: '2025-01-17',
-    event_type: 'semester',
-    icon: 'school-outline',
+    title: 'Demokrasi ve Milli Birlik Günü',
+    description: '15 Temmuz Demokrasi ve Milli Birlik Günü',
+    event_date: '2026-07-15',
+    event_type: 'holiday',
+    icon: 'flag-outline',
   });
   await createAcademicCalendar({
-    title: 'Bahar Dönemi Başlangıcı',
-    description: '2024-2025 Bahar dönemi derslerinin başlangıcı',
-    event_date: '2025-02-10',
-    event_type: 'semester',
-    icon: 'school-outline',
+    title: 'Bütünleme Sınav Sonuçları İlanının Son Günü',
+    description: 'Bahar dönemi bütünleme sınav sonuçlarının ilan edilmesi için son gün',
+    event_date: '2026-07-16',
+    event_type: 'deadline',
+    icon: 'megaphone-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Tek Ders Sınavı Başvurusu',
+    description: 'Tek ders sınavı başvuruları',
+    event_date: '2026-07-16',
+    end_date: '2026-07-17',
+    event_type: 'registration',
+    icon: 'create-outline',
+  });
+
+  // === AĞUSTOS 2026 ===
+  await createAcademicCalendar({
+    title: 'Azami Süreyi Tamamlayan Lisans-Önlisans Öğrenciler İçin Ek Sınav Başvurusu',
+    description: 'Azami süreyi tamamlayan öğrenciler için ek sınav başvuruları',
+    event_date: '2026-08-31',
+    end_date: '2026-09-11',
+    event_type: 'registration',
+    icon: 'create-outline',
+  });
+
+  // === EYLÜL 2026 ===
+  await createAcademicCalendar({
+    title: 'Ek Sınav-I Tarihleri',
+    description: 'Azami süreyi tamamlayan Lisans-Önlisans öğrenciler için Ek Sınav-I',
+    event_date: '2026-09-07',
+    end_date: '2026-09-09',
+    event_type: 'exam',
+    icon: 'document-text-outline',
+  });
+  await createAcademicCalendar({
+    title: 'Ek Sınav-II Tarihleri',
+    description: 'Azami süreyi tamamlayan Lisans-Önlisans öğrenciler için Ek Sınav-II',
+    event_date: '2026-09-10',
+    end_date: '2026-09-11',
+    event_type: 'exam',
+    icon: 'document-text-outline',
   });
 
   console.log('Sample data seeded successfully');
