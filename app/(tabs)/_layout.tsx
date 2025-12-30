@@ -1,20 +1,23 @@
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 export default function TabLayout() {
+  const { colors, isDark } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#667eea',
-        tabBarInactiveTintColor: '#64748b',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          backgroundColor: colors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: 'rgba(255, 255, 255, 0.08)',
+          borderTopColor: colors.tabBarBorder,
           height: 85,
           paddingTop: 12,
           paddingBottom: 28,
@@ -31,7 +34,7 @@ export default function TabLayout() {
         options={{
           title: 'Program',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer, focused && { backgroundColor: colors.primary + '20' }]}>
               <Ionicons 
                 name={focused ? 'calendar' : 'calendar-outline'} 
                 size={24} 
@@ -46,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Ana Sayfa',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer, focused && { backgroundColor: colors.primary + '20' }]}>
               <Ionicons 
                 name={focused ? 'home' : 'home-outline'} 
                 size={24} 
@@ -61,7 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Harita',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer, focused && { backgroundColor: colors.primary + '20' }]}>
               <Ionicons 
                 name={focused ? 'map' : 'map-outline'} 
                 size={24} 
@@ -76,7 +79,7 @@ export default function TabLayout() {
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer, focused && { backgroundColor: colors.primary + '20' }]}>
               <Ionicons 
                 name={focused ? 'person' : 'person-outline'} 
                 size={24} 
@@ -97,8 +100,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconContainerActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
   },
 });

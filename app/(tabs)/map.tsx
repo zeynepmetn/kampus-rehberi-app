@@ -1,3 +1,4 @@
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef, useState } from 'react';
@@ -282,7 +283,7 @@ const busSchedule = {
   },
 };
 
-// Kampüs merkezi (tüm koordinatların ortası)
+// Kampüs merkezi
 const CAMPUS_CENTER = {
   latitude: 40.5705,
   longitude: 34.9825,
@@ -292,10 +293,13 @@ const CAMPUS_CENTER = {
 
 export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
+  const { colors, isDark } = useTheme();
   const [selectedType, setSelectedType] = useState<LocationType | 'all'>('all');
   const [selectedLocation, setSelectedLocation] = useState<CampusLocation | null>(null);
   const [showBusModal, setShowBusModal] = useState(false);
   const [selectedBusLine, setSelectedBusLine] = useState<string>('11-A');
+
+  const styles = createStyles(colors, isDark);
 
   const filteredLocations =
     selectedType === 'all'
@@ -316,7 +320,6 @@ export default function MapScreen() {
     if (location.type === 'bus') {
       setShowBusModal(true);
     }
-    // Haritayı konuma taşı
     mapRef.current?.animateToRegion({
       latitude: location.latitude,
       longitude: location.longitude,
@@ -340,14 +343,10 @@ export default function MapScreen() {
     return null;
   };
 
-  const getMarkerColor = (type: string) => {
-    return typeConfig[type]?.markerColor || '#94a3b8';
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <Text style={styles.headerTitle}>Kampüs Haritası</Text>
         <Text style={styles.headerSubtitle}>Konumları keşfedin</Text>
       </LinearGradient>
@@ -406,7 +405,7 @@ export default function MapScreen() {
         style={styles.filterScrollView}
       >
         {filterTypes.map((type) => {
-          const config = type === 'all' ? { icon: 'apps', color: '#667eea', label: 'Tümü' } : typeConfig[type];
+          const config = type === 'all' ? { icon: 'apps', color: colors.primary, label: 'Tümü' } : typeConfig[type];
           return (
             <TouchableOpacity
               key={type}
@@ -420,7 +419,7 @@ export default function MapScreen() {
               <Ionicons
                 name={config.icon as any}
                 size={14}
-                color={selectedType === type ? config.color : '#64748b'}
+                color={selectedType === type ? config.color : colors.textTertiary}
               />
               <Text
                 style={[
@@ -493,7 +492,7 @@ export default function MapScreen() {
                   <Ionicons
                     name={isBus ? 'time-outline' : 'navigate-outline'}
                     size={20}
-                    color="#667eea"
+                    color={colors.primary}
                   />
                 </TouchableOpacity>
               </View>
@@ -522,7 +521,7 @@ export default function MapScreen() {
                 </View>
               </View>
               <TouchableOpacity onPress={() => setShowBusModal(false)}>
-                <Ionicons name="close" size={28} color="#fff" />
+                <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -606,7 +605,7 @@ export default function MapScreen() {
 
             {/* Alt Bilgi */}
             <View style={styles.modalFooter}>
-              <Ionicons name="information-circle-outline" size={16} color="#64748b" />
+              <Ionicons name="information-circle-outline" size={16} color={colors.textTertiary} />
               <Text style={styles.footerText}>
                 Saatler tahminidir, trafik durumuna göre değişebilir.
               </Text>
@@ -618,10 +617,10 @@ export default function MapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -635,7 +634,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   mapContainer: {
@@ -645,7 +644,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.3)',
+    borderColor: colors.primary + '40',
   },
   map: {
     flex: 1,
@@ -665,23 +664,23 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   calloutContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.backgroundSecondary,
     padding: 12,
     borderRadius: 12,
     minWidth: 150,
     maxWidth: 200,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.cardBorder,
   },
   calloutTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 4,
   },
   calloutDescription: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   calloutBadge: {
@@ -711,19 +710,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: colors.cardBorder,
     marginRight: 6,
     gap: 4,
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: colors.primary + '15',
   },
   filterText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   locationList: {
     flex: 1,
@@ -735,25 +734,25 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   listCount: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontWeight: '400',
   },
   locationCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   locationCardSelected: {
-    borderColor: 'rgba(102, 126, 234, 0.4)',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    borderColor: colors.primary + '60',
+    backgroundColor: colors.primary + '10',
   },
   locationIcon: {
     width: 48,
@@ -769,16 +768,16 @@ const styles = StyleSheet.create({
   locationName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   locationType: {
     fontSize: 12,
-    color: '#667eea',
+    color: colors.primary,
     marginTop: 2,
   },
   locationDescription: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 6,
     lineHeight: 16,
   },
@@ -804,7 +803,7 @@ const styles = StyleSheet.create({
   },
   nextBusText: {
     fontSize: 12,
-    color: '#4ECDC4',
+    color: colors.secondary,
     fontWeight: '600',
   },
   locationActions: {
@@ -814,18 +813,18 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 20,
@@ -854,11 +853,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
   },
   modalSubtitle: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 2,
   },
   busLineTabs: {
@@ -871,20 +870,22 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   busLineTabText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   busLineTabTextActive: {
     color: '#fff',
   },
   busRouteText: {
     fontSize: 11,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 4,
   },
   busRouteTextActive: {
@@ -901,15 +902,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     marginBottom: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: colors.card,
   },
   scheduleItemPast: {
     opacity: 0.4,
   },
   scheduleItemNext: {
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: colors.secondary + '20',
     borderWidth: 1,
-    borderColor: 'rgba(78, 205, 196, 0.3)',
+    borderColor: colors.secondary + '40',
   },
   scheduleTimeContainer: {
     flexDirection: 'row',
@@ -919,16 +920,16 @@ const styles = StyleSheet.create({
   scheduleTime: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   scheduleTimePast: {
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   scheduleTimeNext: {
-    color: '#4ECDC4',
+    color: colors.secondary,
   },
   nextBadge: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: colors.secondary,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -942,21 +943,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.inputBackground,
   },
   noteBadgeBusy: {
-    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+    backgroundColor: colors.accent + '30',
   },
   noteBadgeLast: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: colors.error + '30',
   },
   noteBadgeFirst: {
-    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    backgroundColor: colors.secondary + '30',
   },
   noteText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   modalFooter: {
     flexDirection: 'row',
@@ -965,10 +966,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.divider,
   },
   footerText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
 });

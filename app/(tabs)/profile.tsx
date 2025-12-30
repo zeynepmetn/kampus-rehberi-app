@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useTheme, ThemeMode } from '@/context/ThemeContext';
 import { getEnrolledCourses, StudentCourse } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,7 +16,8 @@ import {
 } from 'react-native';
 
 export default function ProfileScreen() {
-  const { student, settings, updateSettings, logout, isAdmin } = useAuth();
+  const { student, settings, updateSettings, logout } = useAuth();
+  const { colors, themeMode, setThemeMode, isDark } = useTheme();
   const [localSettings, setLocalSettings] = useState(settings);
   const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
   const [totalCredits, setTotalCredits] = useState(0);
@@ -65,6 +67,12 @@ export default function ProfileScreen() {
       ]
     );
   };
+
+  const themeOptions: { mode: ThemeMode; label: string; icon: string }[] = [
+    { mode: 'light', label: 'Açık', icon: 'sunny-outline' },
+    { mode: 'dark', label: 'Koyu', icon: 'moon-outline' },
+    { mode: 'system', label: 'Sistem', icon: 'phone-portrait-outline' },
+  ];
 
   const settingsGroups = [
     {
@@ -141,10 +149,12 @@ export default function ProfileScreen() {
     return 'Ö';
   };
 
+  const styles = createStyles(colors, isDark);
+
   return (
     <View style={styles.container}>
       {/* Header with Profile */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <LinearGradient
@@ -200,7 +210,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.courseSummaryHeader}>
               <Text style={styles.courseSummaryTitle}>Bu Dönem</Text>
-              <Ionicons name="chevron-forward" size={20} color="#667eea" />
+              <Ionicons name="chevron-forward" size={20} color={colors.primary} />
             </View>
             <View style={styles.courseSummaryStats}>
               <View style={styles.summaryStatItem}>
@@ -218,6 +228,40 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* Theme Settings */}
+        <View style={styles.settingsGroup}>
+          <View style={styles.groupHeader}>
+            <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
+            <Text style={styles.groupTitle}>Tema Ayarları</Text>
+          </View>
+          <View style={styles.themeSelector}>
+            {themeOptions.map((option) => (
+              <TouchableOpacity
+                key={option.mode}
+                style={[
+                  styles.themeOption,
+                  themeMode === option.mode && styles.themeOptionActive,
+                ]}
+                onPress={() => setThemeMode(option.mode)}
+              >
+                <Ionicons
+                  name={option.icon as any}
+                  size={24}
+                  color={themeMode === option.mode ? '#fff' : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.themeOptionText,
+                    themeMode === option.mode && styles.themeOptionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
         {/* Quick Menu */}
         <View style={styles.menuSection}>
@@ -237,7 +281,7 @@ export default function ProfileScreen() {
                   <Text style={styles.menuBadgeText}>{item.badge}</Text>
                 </View>
               )}
-              <Ionicons name="chevron-forward" size={20} color="#64748b" />
+              <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
             </TouchableOpacity>
           ))}
         </View>
@@ -246,13 +290,13 @@ export default function ProfileScreen() {
         {settingsGroups.map((group) => (
           <View key={group.title} style={styles.settingsGroup}>
             <View style={styles.groupHeader}>
-              <Ionicons name={group.icon as any} size={20} color="#667eea" />
+              <Ionicons name={group.icon as any} size={20} color={colors.primary} />
               <Text style={styles.groupTitle}>{group.title}</Text>
             </View>
             {group.items.map((item) => (
               <View key={item.key} style={styles.settingItem}>
                 <View style={styles.settingIcon}>
-                  <Ionicons name={item.icon as any} size={20} color="#94a3b8" />
+                  <Ionicons name={item.icon as any} size={20} color={colors.textSecondary} />
                 </View>
                 <View style={styles.settingInfo}>
                   <Text style={styles.settingLabel}>{item.label}</Text>
@@ -261,8 +305,8 @@ export default function ProfileScreen() {
                 <Switch
                   value={localSettings.notifications[item.key]}
                   onValueChange={() => handleToggleSetting(item.key)}
-                  trackColor={{ false: '#334155', true: 'rgba(102, 126, 234, 0.4)' }}
-                  thumbColor={localSettings.notifications[item.key] ? '#667eea' : '#94a3b8'}
+                  trackColor={{ false: colors.inputBackground, true: colors.primary + '60' }}
+                  thumbColor={localSettings.notifications[item.key] ? colors.primary : colors.textSecondary}
                 />
               </View>
             ))}
@@ -275,7 +319,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           activeOpacity={0.8}
         >
-          <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+          <Ionicons name="log-out-outline" size={22} color={colors.error} />
           <Text style={styles.logoutText}>Çıkış Yap</Text>
         </TouchableOpacity>
 
@@ -289,10 +333,10 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -325,11 +369,11 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#1a1a2e',
+    borderColor: isDark ? '#1a1a2e' : '#fff',
   },
   profileInfo: {
     marginLeft: 16,
@@ -342,11 +386,11 @@ const styles = StyleSheet.create({
   },
   profileNumber: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 2,
   },
   departmentBadge: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -355,7 +399,7 @@ const styles = StyleSheet.create({
   },
   departmentText: {
     fontSize: 12,
-    color: '#667eea',
+    color: '#fff',
     fontWeight: '600',
   },
   statsRow: {
@@ -363,7 +407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: 16,
   },
@@ -378,13 +422,13 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   content: {
     flex: 1,
@@ -394,12 +438,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   courseSummary: {
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: colors.primary + '15',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.2)',
+    borderColor: colors.primary + '30',
   },
   courseSummaryHeader: {
     flexDirection: 'row',
@@ -410,7 +454,7 @@ const styles = StyleSheet.create({
   courseSummaryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   courseSummaryStats: {
     flexDirection: 'row',
@@ -422,27 +466,70 @@ const styles = StyleSheet.create({
   summaryStatValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#667eea',
+    color: colors.primary,
   },
   summaryStatLabel: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 2,
   },
+  settingsGroup: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 10,
+  },
+  groupTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  themeSelector: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: colors.inputBackground,
+    gap: 8,
+  },
+  themeOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  themeOptionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  themeOptionTextActive: {
+    color: '#fff',
+  },
   menuSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   menuIcon: {
     width: 40,
@@ -455,11 +542,11 @@ const styles = StyleSheet.create({
   menuLabel: {
     flex: 1,
     fontSize: 15,
-    color: '#fff',
+    color: colors.text,
     fontWeight: '500',
   },
   menuBadge: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: colors.secondary,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -470,37 +557,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-  settingsGroup: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  groupHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 10,
-  },
-  groupTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   settingIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -512,28 +580,28 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#fff',
+    color: colors.text,
   },
   settingDesc: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: colors.error + '15',
     borderRadius: 16,
     padding: 16,
     gap: 8,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: colors.error + '30',
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#ef4444',
+    color: colors.error,
   },
   versionContainer: {
     alignItems: 'center',
@@ -541,11 +609,11 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   copyrightText: {
     fontSize: 11,
-    color: '#475569',
+    color: colors.textTertiary,
     marginTop: 4,
   },
 });

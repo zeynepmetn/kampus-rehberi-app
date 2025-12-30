@@ -26,7 +26,7 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (studentNumber: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (studentNumber: string, password: string) => Promise<{ success: boolean; error?: string; isAdmin?: boolean }>;
   loginAsAdmin: (password: string) => boolean;
   register: (data: {
     firstName: string;
@@ -54,7 +54,8 @@ const defaultSettings: UserSettings = {
   language: 'tr',
 };
 
-// Admin password - in production, this should be more secure
+// Admin credentials
+const ADMIN_STUDENT_NUMBER = '000000000';
 const ADMIN_PASSWORD = 'admin123';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,9 +69,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: false,
   });
 
-  const login = useCallback(async (studentNumber: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = useCallback(async (studentNumber: string, password: string): Promise<{ success: boolean; error?: string; isAdmin?: boolean }> => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
+
+      // Check if admin login
+      if (studentNumber === ADMIN_STUDENT_NUMBER && password === ADMIN_PASSWORD) {
+        setState(prev => ({
+          ...prev,
+          isLoggedIn: true,
+          isAdmin: true,
+          student: null,
+          isLoading: false,
+        }));
+        return { success: true, isAdmin: true };
+      }
 
       // Find student by number
       const student = await getStudentByNumber(studentNumber);
@@ -94,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
       }));
 
-      return { success: true };
+      return { success: true, isAdmin: false };
     } catch (error) {
       console.error('Login error:', error);
       setState(prev => ({ ...prev, isLoading: false }));

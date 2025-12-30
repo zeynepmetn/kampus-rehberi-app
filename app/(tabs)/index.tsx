@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import {
   CourseSchedule,
   getEnrolledCourses,
@@ -30,7 +31,8 @@ const courseColors = [
 
 export default function ScheduleScreen() {
   const { isReady } = useDatabase();
-  const { student, isLoggedIn } = useAuth();
+  const { student } = useAuth();
+  const { colors, isDark } = useTheme();
   const [enrolledCourses, setEnrolledCourses] = useState<StudentCourse[]>([]);
   const [weeklySchedule, setWeeklySchedule] = useState<Record<string, CourseSchedule[]>>({});
   const [selectedDay, setSelectedDay] = useState(getCurrentDay());
@@ -95,10 +97,12 @@ export default function ScheduleScreen() {
     return (weeklySchedule[day] || []).length;
   };
 
+  const styles = createStyles(colors, isDark);
+
   if (!isReady || isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
@@ -107,7 +111,7 @@ export default function ScheduleScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#1a1a2e', '#16213e']}
+        colors={colors.headerGradient}
         style={styles.header}
       >
         <View style={styles.headerContent}>
@@ -148,12 +152,12 @@ export default function ScheduleScreen() {
       {/* Course Info or Selection Prompt */}
       {totalCourses > 0 ? (
         <View style={styles.filterInfo}>
-          <Ionicons name="checkmark-circle" size={16} color="#4ECDC4" />
+          <Ionicons name="checkmark-circle" size={16} color={colors.secondary} />
           <Text style={styles.filterInfoText}>
             {totalCourses} ders kayıtlı • {totalCredits} kredi • {todayCourses.length} ders bugün
           </Text>
           <TouchableOpacity onPress={() => router.push('/course-selection')}>
-            <Ionicons name="settings-outline" size={18} color="#4ECDC4" />
+            <Ionicons name="settings-outline" size={18} color={colors.secondary} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -161,11 +165,11 @@ export default function ScheduleScreen() {
           style={styles.selectCoursesPrompt}
           onPress={() => router.push('/course-selection')}
         >
-          <Ionicons name="add-circle-outline" size={20} color="#667eea" />
+          <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
           <Text style={styles.selectCoursesText}>
             Derslerinizi seçmek için tıklayın
           </Text>
-          <Ionicons name="chevron-forward" size={20} color="#667eea" />
+          <Ionicons name="chevron-forward" size={20} color={colors.primary} />
         </TouchableOpacity>
       )}
 
@@ -226,7 +230,7 @@ export default function ScheduleScreen() {
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={handleRefresh}
-            tintColor="#667eea"
+            tintColor={colors.primary}
           />
         }
       >
@@ -238,7 +242,7 @@ export default function ScheduleScreen() {
           /* No courses selected */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="book-outline" size={48} color="#667eea" />
+              <Ionicons name="book-outline" size={48} color={colors.primary} />
             </View>
             <Text style={styles.emptyTitle}>Ders Seçimi Yapılmadı</Text>
             <Text style={styles.emptySubtitle}>
@@ -255,7 +259,7 @@ export default function ScheduleScreen() {
         ) : todayCourses.length === 0 ? (
           /* Courses selected but none today */
           <View style={styles.emptyState}>
-            <Ionicons name="cafe-outline" size={64} color="#64748b" />
+            <Ionicons name="cafe-outline" size={64} color={colors.textTertiary} />
             <Text style={styles.emptyTitle}>Bu Gün Ders Yok!</Text>
             <Text style={styles.emptySubtitle}>
               {selectedDay} günü dersiniz bulunmuyor.
@@ -276,7 +280,7 @@ export default function ScheduleScreen() {
                 <View style={styles.courseHeader}>
                   <Text style={styles.courseCode}>{schedule.course_code}</Text>
                   <View style={styles.timeContainer}>
-                    <Ionicons name="time-outline" size={14} color="#94a3b8" />
+                    <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
                     <Text style={styles.courseTime}>
                       {schedule.start_time} - {schedule.end_time}
                     </Text>
@@ -285,11 +289,11 @@ export default function ScheduleScreen() {
                 <Text style={styles.courseName}>{schedule.course_name}</Text>
                 <View style={styles.courseDetails}>
                   <View style={styles.detailItem}>
-                    <Ionicons name="person-outline" size={14} color="#64748b" />
+                    <Ionicons name="person-outline" size={14} color={colors.textTertiary} />
                     <Text style={styles.detailText}>{schedule.instructor}</Text>
                   </View>
                   <View style={styles.detailItem}>
-                    <Ionicons name="location-outline" size={14} color="#64748b" />
+                    <Ionicons name="location-outline" size={14} color={colors.textTertiary} />
                     <Text style={styles.detailText}>{schedule.classroom} • {schedule.faculty}</Text>
                   </View>
                 </View>
@@ -304,17 +308,17 @@ export default function ScheduleScreen() {
             <Text style={styles.statsTitle}>Haftalık Özet</Text>
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <Ionicons name="book-outline" size={24} color="#667eea" />
+                <Ionicons name="book-outline" size={24} color={colors.primary} />
                 <Text style={styles.statNumber}>{totalCourses}</Text>
                 <Text style={styles.statLabel}>Toplam Ders</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons name="ribbon-outline" size={24} color="#4ECDC4" />
+                <Ionicons name="ribbon-outline" size={24} color={colors.secondary} />
                 <Text style={styles.statNumber}>{totalCredits}</Text>
                 <Text style={styles.statLabel}>Kredi</Text>
               </View>
               <View style={styles.statCard}>
-                <Ionicons name="calendar-outline" size={24} color="#FF6B6B" />
+                <Ionicons name="calendar-outline" size={24} color={colors.accent} />
                 <Text style={styles.statNumber}>
                   {days.filter(day => getCoursesCountForDay(day) > 0).length}
                 </Text>
@@ -332,8 +336,8 @@ export default function ScheduleScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/course-selection')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(102, 126, 234, 0.15)' }]}>
-                <Ionicons name="school" size={24} color="#667eea" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.primary + '20' }]}>
+                <Ionicons name="school" size={24} color={colors.primary} />
               </View>
               <Text style={styles.actionText}>Ders Seçimi</Text>
             </TouchableOpacity>
@@ -341,8 +345,8 @@ export default function ScheduleScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/academic-calendar')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(78, 205, 196, 0.15)' }]}>
-                <Ionicons name="calendar" size={24} color="#4ECDC4" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.secondary + '20' }]}>
+                <Ionicons name="calendar" size={24} color={colors.secondary} />
               </View>
               <Text style={styles.actionText}>Akademik Takvim</Text>
             </TouchableOpacity>
@@ -350,8 +354,8 @@ export default function ScheduleScreen() {
               style={styles.actionCard}
               onPress={() => router.push('/my-exams')}
             >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(255, 107, 107, 0.15)' }]}>
-                <Ionicons name="document-text" size={24} color="#FF6B6B" />
+              <View style={[styles.actionIcon, { backgroundColor: colors.accent + '20' }]}>
+                <Ionicons name="document-text" size={24} color={colors.accent} />
               </View>
               <Text style={styles.actionText}>Sınavlarım</Text>
             </TouchableOpacity>
@@ -362,19 +366,19 @@ export default function ScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 12,
     fontSize: 14,
   },
@@ -390,7 +394,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   studentName: {
     fontSize: 24,
@@ -400,20 +404,21 @@ const styles = StyleSheet.create({
   },
   department: {
     fontSize: 13,
-    color: '#667eea',
+    color: '#fff',
+    opacity: 0.8,
     marginTop: 4,
   },
   notificationButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   gpaContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginTop: 16,
@@ -424,51 +429,51 @@ const styles = StyleSheet.create({
   },
   gpaLabel: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 4,
   },
   gpaValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#667eea',
+    color: '#fff',
   },
   gpaDivider: {
     width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginHorizontal: 16,
   },
   filterInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    backgroundColor: colors.secondary + '15',
     paddingVertical: 10,
     paddingHorizontal: 16,
     gap: 8,
   },
   filterInfoText: {
     fontSize: 13,
-    color: '#4ECDC4',
+    color: colors.secondary,
     flex: 1,
   },
   selectCoursesPrompt: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: colors.primary + '15',
     paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 8,
   },
   selectCoursesText: {
     fontSize: 14,
-    color: '#667eea',
+    color: colors.primary,
     flex: 1,
     fontWeight: '500',
   },
   daySelectorContainer: {
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   daySelector: {
     paddingHorizontal: 16,
@@ -478,17 +483,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     alignItems: 'center',
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   dayButtonActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   dayButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   dayButtonTextActive: {
     color: '#fff',
@@ -503,7 +511,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#475569',
+    backgroundColor: colors.textTertiary,
   },
   dayDotActive: {
     backgroundColor: '#fff',
@@ -511,7 +519,7 @@ const styles = StyleSheet.create({
   dayCount: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#4ECDC4',
+    color: colors.secondary,
   },
   dayCountActive: {
     color: '#fff',
@@ -526,7 +534,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   emptyState: {
@@ -538,7 +546,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -546,12 +554,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 8,
     textAlign: 'center',
     paddingHorizontal: 20,
@@ -559,7 +567,7 @@ const styles = StyleSheet.create({
   selectCoursesButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -573,12 +581,12 @@ const styles = StyleSheet.create({
   },
   courseCard: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     marginBottom: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   courseAccent: {
     width: 4,
@@ -596,8 +604,8 @@ const styles = StyleSheet.create({
   courseCode: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#667eea',
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    color: colors.primary,
+    backgroundColor: colors.primary + '20',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -609,12 +617,12 @@ const styles = StyleSheet.create({
   },
   courseTime: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   courseName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 12,
   },
   courseDetails: {
@@ -627,7 +635,7 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 13,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   statsContainer: {
     marginTop: 24,
@@ -635,7 +643,7 @@ const styles = StyleSheet.create({
   statsTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 16,
   },
   statsGrid: {
@@ -644,22 +652,22 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   statNumber: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     marginTop: 8,
   },
   statLabel: {
     fontSize: 11,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -672,12 +680,12 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   actionIcon: {
     width: 48,
@@ -689,7 +697,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

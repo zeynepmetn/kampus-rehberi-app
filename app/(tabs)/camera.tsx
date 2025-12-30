@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useCafeteria } from '@/context/CafeteriaContext';
+import { useTheme } from '@/context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
@@ -19,14 +20,17 @@ type Tab = 'menu' | 'posts' | 'events';
 
 export default function CameraScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
-  const { posts, menuItems, snacks, events, isLoading, refreshData, toggleLike, addComment } = useCafeteria();
+  const { posts, menuItems, snacks, events, toggleLike, addComment } = useCafeteria();
   const { student } = useAuth();
+  const { colors, isDark } = useTheme();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+
+  const styles = createStyles(colors, isDark);
 
   const handleAddComment = (postId: string) => {
     const content = commentInputs[postId]?.trim();
-    if (content && student?.name) {
-      addComment(postId, student.name, content);
+    if (content && student?.first_name) {
+      addComment(postId, `${student.first_name} ${student.last_name}`, content);
       setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
     }
   };
@@ -43,21 +47,13 @@ export default function CameraScreen() {
     return date.toLocaleDateString('tr-TR');
   };
 
-  const formatEventDate = (date: Date) => {
-    return date.toLocaleDateString('tr-TR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    });
-  };
-
   const renderMenu = () => (
     <View style={styles.menuContainer}>
       <Text style={styles.menuTitle}>📅 Bugünün Menüsü</Text>
       
       {menuItems.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="restaurant-outline" size={48} color="#64748b" />
+          <Ionicons name="restaurant-outline" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyText}>Bugün için menü bulunmuyor</Text>
         </View>
       ) : (
@@ -158,14 +154,14 @@ export default function CameraScreen() {
               <Ionicons
                 name={post.isLiked ? 'heart' : 'heart-outline'}
                 size={22}
-                color={post.isLiked ? '#ef4444' : '#94a3b8'}
+                color={post.isLiked ? colors.error : colors.textSecondary}
               />
               <Text style={[styles.actionText, post.isLiked && styles.likedText]}>
                 {post.likes}
               </Text>
             </TouchableOpacity>
             <View style={styles.actionButton}>
-              <Ionicons name="chatbubble-outline" size={20} color="#94a3b8" />
+              <Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />
               <Text style={styles.actionText}>{post.comments.length}</Text>
             </View>
           </View>
@@ -187,7 +183,7 @@ export default function CameraScreen() {
             <TextInput
               style={styles.commentInput}
               placeholder="Yorum yaz..."
-              placeholderTextColor="#64748b"
+              placeholderTextColor={colors.placeholder}
               value={commentInputs[post.id] || ''}
               onChangeText={(text) =>
                 setCommentInputs((prev) => ({ ...prev, [post.id]: text }))
@@ -197,7 +193,7 @@ export default function CameraScreen() {
               style={styles.sendButton}
               onPress={() => handleAddComment(post.id)}
             >
-              <Ionicons name="send" size={18} color="#667eea" />
+              <Ionicons name="send" size={18} color={colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -209,7 +205,7 @@ export default function CameraScreen() {
     <View style={styles.eventsContainer}>
       {events.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="calendar-outline" size={48} color="#64748b" />
+          <Ionicons name="calendar-outline" size={48} color={colors.textTertiary} />
           <Text style={styles.emptyText}>Henüz etkinlik bulunmuyor</Text>
         </View>
       ) : (
@@ -218,7 +214,7 @@ export default function CameraScreen() {
           return (
             <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.8}>
               <LinearGradient
-                colors={['rgba(102, 126, 234, 0.2)', 'rgba(118, 75, 162, 0.1)']}
+                colors={[colors.primary + '30', colors.primary + '10']}
                 style={styles.eventGradient}
               >
                 <View style={styles.eventDate}>
@@ -239,13 +235,13 @@ export default function CameraScreen() {
                   <View style={styles.eventMeta}>
                     {event.location && (
                       <View style={styles.eventMetaItem}>
-                        <Ionicons name="location-outline" size={14} color="#94a3b8" />
+                        <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
                         <Text style={styles.eventMetaText}>{event.location}</Text>
                       </View>
                     )}
                     {event.organizer && (
                       <View style={styles.eventMetaItem}>
-                        <Ionicons name="people-outline" size={14} color="#94a3b8" />
+                        <Ionicons name="people-outline" size={14} color={colors.textSecondary} />
                         <Text style={styles.eventMetaText}>{event.organizer}</Text>
                       </View>
                     )}
@@ -262,7 +258,7 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
+      <LinearGradient colors={colors.headerGradient} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.lcdIcon}>
             <Ionicons name="tv-outline" size={28} color="#fff" />
@@ -281,7 +277,7 @@ export default function CameraScreen() {
           <Ionicons
             name="restaurant-outline"
             size={20}
-            color={activeTab === 'menu' ? '#667eea' : '#64748b'}
+            color={activeTab === 'menu' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, activeTab === 'menu' && styles.tabTextActive]}>
             Menü
@@ -294,7 +290,7 @@ export default function CameraScreen() {
           <Ionicons
             name="newspaper-outline"
             size={20}
-            color={activeTab === 'posts' ? '#667eea' : '#64748b'}
+            color={activeTab === 'posts' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, activeTab === 'posts' && styles.tabTextActive]}>
             Duyurular
@@ -307,7 +303,7 @@ export default function CameraScreen() {
           <Ionicons
             name="calendar-outline"
             size={20}
-            color={activeTab === 'events' ? '#667eea' : '#64748b'}
+            color={activeTab === 'events' ? colors.primary : colors.textTertiary}
           />
           <Text style={[styles.tabText, activeTab === 'events' && styles.tabTextActive]}>
             Etkinlikler
@@ -329,10 +325,10 @@ export default function CameraScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
   },
   header: {
     paddingTop: 60,
@@ -347,7 +343,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -359,7 +355,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 4,
   },
   tabContainer: {
@@ -367,6 +363,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
+    backgroundColor: colors.background,
   },
   tabButton: {
     flex: 1,
@@ -375,19 +372,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     gap: 6,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: colors.primary + '20',
+    borderColor: colors.primary + '40',
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   tabTextActive: {
-    color: '#667eea',
+    color: colors.primary,
   },
   content: {
     flex: 1,
@@ -403,21 +403,21 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 8,
   },
   menuSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   menuSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 12,
   },
   menuItem: {
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   menuItemInfo: {
     flex: 1,
@@ -434,11 +434,11 @@ const styles = StyleSheet.create({
   menuItemName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   menuItemDesc: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 4,
   },
   menuItemPrice: {
@@ -447,10 +447,10 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#4ECDC4',
+    color: colors.secondary,
   },
   availableBadge: {
-    backgroundColor: 'rgba(78, 205, 196, 0.15)',
+    backgroundColor: colors.success + '20',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -458,11 +458,11 @@ const styles = StyleSheet.create({
   },
   availableText: {
     fontSize: 10,
-    color: '#4ECDC4',
+    color: colors.success,
     fontWeight: '600',
   },
   unavailableBadge: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: colors.error + '20',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   },
   unavailableText: {
     fontSize: 10,
-    color: '#ef4444',
+    color: colors.error,
     fontWeight: '600',
   },
   // Posts styles
@@ -478,11 +478,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   postCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.cardBorder,
   },
   postHeader: {
     flexDirection: 'row',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: colors.primary + '40',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -503,22 +503,22 @@ const styles = StyleSheet.create({
   postAuthor: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   postDate: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 2,
   },
   postTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 8,
   },
   postContent: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   postActions: {
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.divider,
     gap: 24,
   },
   actionButton: {
@@ -536,29 +536,29 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   likedText: {
-    color: '#ef4444',
+    color: colors.error,
   },
   commentsSection: {
     marginTop: 12,
     gap: 8,
   },
   commentItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: colors.inputBackground,
     padding: 10,
     borderRadius: 8,
   },
   commentAuthor: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#667eea',
+    color: colors.primary,
     marginBottom: 4,
   },
   commentContent: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   addCommentContainer: {
     flexDirection: 'row',
@@ -567,20 +567,20 @@ const styles = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.inputBackground,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: '#fff',
+    color: colors.inputText,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.inputBorder,
   },
   sendButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
+    backgroundColor: colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -596,25 +596,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.2)',
+    borderColor: colors.primary + '30',
     borderRadius: 16,
   },
   eventDate: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: colors.primary + '40',
     justifyContent: 'center',
     alignItems: 'center',
   },
   eventDateDay: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: isDark ? '#fff' : colors.primary,
   },
   eventDateMonth: {
     fontSize: 11,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     textTransform: 'uppercase',
   },
   eventInfo: {
@@ -624,12 +624,12 @@ const styles = StyleSheet.create({
   eventTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
     marginBottom: 6,
   },
   eventDescription: {
     fontSize: 13,
-    color: '#94a3b8',
+    color: colors.textSecondary,
     lineHeight: 18,
     marginBottom: 8,
   },
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   },
   eventMetaText: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
   },
   emptyState: {
     alignItems: 'center',
@@ -652,8 +652,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 12,
   },
 });
-

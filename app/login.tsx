@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/AuthContext';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import { Department, getDepartments } from '@/database/database';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,11 +20,12 @@ import {
   View,
 } from 'react-native';
 
-type AuthMode = 'login' | 'register' | 'admin';
+type AuthMode = 'login' | 'register';
 
 export default function LoginScreen() {
   const { isReady } = useDatabase();
-  const { login, loginAsAdmin, register, isLoading } = useAuth();
+  const { login, register, isLoading } = useAuth();
+  const { colors, isDark } = useTheme();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -40,10 +42,9 @@ export default function LoginScreen() {
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [classYear, setClassYear] = useState('1');
 
-  // Admin fields
-  const [adminPassword, setAdminPassword] = useState('');
-
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const styles = createStyles(colors, isDark);
 
   useEffect(() => {
     if (isReady) {
@@ -115,7 +116,12 @@ export default function LoginScreen() {
     const result = await login(studentNumber.trim(), password);
 
     if (result.success) {
-      router.replace('/(tabs)');
+      // Admin girişi ise admin paneline yönlendir
+      if (result.isAdmin) {
+        router.replace('/admin');
+      } else {
+        router.replace('/(tabs)');
+      }
     } else {
       Alert.alert('Hata', result.error || 'Giriş yapılamadı');
     }
@@ -141,28 +147,12 @@ export default function LoginScreen() {
     }
   };
 
-  const handleAdminLogin = () => {
-    if (!adminPassword.trim()) {
-      setErrors({ adminPassword: 'Şifre gerekli' });
-      return;
-    }
-
-    const success = loginAsAdmin(adminPassword);
-
-    if (success) {
-      router.replace('/admin');
-    } else {
-      Alert.alert('Hata', 'Admin şifresi hatalı');
-    }
-  };
-
   const clearFields = () => {
     setStudentNumber('');
     setPassword('');
     setFirstName('');
     setLastName('');
     setEmail('');
-    setAdminPassword('');
     setErrors({});
   };
 
@@ -174,15 +164,20 @@ export default function LoginScreen() {
   if (!isReady) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
 
+  // Login sayfası için gradient renkleri
+  const loginGradient: [string, string, string] = isDark 
+    ? ['#1a1a2e', '#16213e', '#0f3460'] 
+    : ['#667eea', '#764ba2', '#667eea'];
+
   return (
     <LinearGradient
-      colors={['#1a1a2e', '#16213e', '#0f3460']}
+      colors={loginGradient}
       style={styles.container}
     >
       <KeyboardAvoidingView
@@ -200,7 +195,7 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.title}>Kampüs</Text>
             <Text style={styles.subtitle}>
-              {mode === 'login' ? 'Öğrenci Girişi' : mode === 'register' ? 'Yeni Kayıt' : 'Admin Girişi'}
+              {mode === 'login' ? 'Öğrenci Girişi' : 'Yeni Kayıt'}
             </Text>
           </View>
 
@@ -210,12 +205,12 @@ export default function LoginScreen() {
               <>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="card-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <TextInput
                     style={[styles.input, errors.studentNumber && styles.inputError]}
                     placeholder="Öğrenci Numarası"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.placeholder}
                     value={studentNumber}
                     onChangeText={setStudentNumber}
                     keyboardType="numeric"
@@ -226,12 +221,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="lock-closed-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="lock-closed-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <TextInput
                     style={[styles.input, errors.password && styles.inputError]}
                     placeholder="Şifre"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.placeholder}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -270,7 +265,7 @@ export default function LoginScreen() {
                     <TextInput
                       style={[styles.input, styles.inputSmall, errors.firstName && styles.inputError]}
                       placeholder="Ad"
-                      placeholderTextColor="#64748b"
+                      placeholderTextColor={colors.placeholder}
                       value={firstName}
                       onChangeText={setFirstName}
                     />
@@ -279,7 +274,7 @@ export default function LoginScreen() {
                     <TextInput
                       style={[styles.input, styles.inputSmall, errors.lastName && styles.inputError]}
                       placeholder="Soyad"
-                      placeholderTextColor="#64748b"
+                      placeholderTextColor={colors.placeholder}
                       value={lastName}
                       onChangeText={setLastName}
                     />
@@ -291,12 +286,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="card-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <TextInput
                     style={[styles.input, errors.studentNumber && styles.inputError]}
                     placeholder="Öğrenci Numarası"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.placeholder}
                     value={studentNumber}
                     onChangeText={setStudentNumber}
                     keyboardType="numeric"
@@ -307,12 +302,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="mail-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="mail-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <TextInput
                     style={[styles.input, errors.email && styles.inputError]}
                     placeholder="E-posta"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.placeholder}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -323,12 +318,12 @@ export default function LoginScreen() {
 
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputIcon}>
-                    <Ionicons name="lock-closed-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="lock-closed-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <TextInput
                     style={[styles.input, errors.password && styles.inputError]}
                     placeholder="Şifre"
-                    placeholderTextColor="#64748b"
+                    placeholderTextColor={colors.placeholder}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -341,12 +336,12 @@ export default function LoginScreen() {
                   onPress={() => setShowDepartmentPicker(true)}
                 >
                   <View style={styles.inputIcon}>
-                    <Ionicons name="school-outline" size={22} color="#94a3b8" />
+                    <Ionicons name="school-outline" size={22} color={colors.textSecondary} />
                   </View>
                   <Text style={[styles.input, styles.pickerText]}>
                     {selectedDepartment?.name || 'Bölüm Seçin'}
                   </Text>
-                  <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+                  <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
                 {errors.department && <Text style={styles.errorText}>{errors.department}</Text>}
 
@@ -397,48 +392,6 @@ export default function LoginScreen() {
               </>
             )}
 
-            {mode === 'admin' && (
-              <>
-                <View style={styles.adminWarning}>
-                  <Ionicons name="shield-checkmark" size={32} color="#667eea" />
-                  <Text style={styles.adminWarningText}>Admin Paneli</Text>
-                  <Text style={styles.adminWarningSubtext}>
-                    Sadece yetkili personel için
-                  </Text>
-                </View>
-
-                <View style={styles.inputWrapper}>
-                  <View style={styles.inputIcon}>
-                    <Ionicons name="key-outline" size={22} color="#94a3b8" />
-                  </View>
-                  <TextInput
-                    style={[styles.input, errors.adminPassword && styles.inputError]}
-                    placeholder="Admin Şifresi"
-                    placeholderTextColor="#64748b"
-                    value={adminPassword}
-                    onChangeText={setAdminPassword}
-                    secureTextEntry
-                  />
-                </View>
-                {errors.adminPassword && <Text style={styles.errorText}>{errors.adminPassword}</Text>}
-
-                <TouchableOpacity
-                  style={styles.loginButton}
-                  onPress={handleAdminLogin}
-                >
-                  <LinearGradient
-                    colors={['#ef4444', '#dc2626']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.buttonGradient}
-                  >
-                    <Text style={styles.loginButtonText}>Admin Girişi</Text>
-                    <Ionicons name="enter" size={20} color="#fff" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </>
-            )}
-
             {/* Mode Switchers */}
             <View style={styles.modeSwitcher}>
               {mode !== 'login' && (
@@ -449,11 +402,6 @@ export default function LoginScreen() {
               {mode !== 'register' && (
                 <TouchableOpacity onPress={() => switchMode('register')}>
                   <Text style={styles.switchText}>Kayıt Ol</Text>
-                </TouchableOpacity>
-              )}
-              {mode !== 'admin' && (
-                <TouchableOpacity onPress={() => switchMode('admin')}>
-                  <Text style={[styles.switchText, styles.adminLink]}>Admin</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -479,7 +427,7 @@ export default function LoginScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Bölüm Seçin</Text>
               <TouchableOpacity onPress={() => setShowDepartmentPicker(false)}>
-                <Ionicons name="close" size={24} color="#fff" />
+                <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.modalList}>
@@ -500,7 +448,7 @@ export default function LoginScreen() {
                     <Text style={styles.modalItemSubtext}>{dept.faculty}</Text>
                   </View>
                   {selectedDepartment?.id === dept.id && (
-                    <Ionicons name="checkmark" size={24} color="#667eea" />
+                    <Ionicons name="checkmark" size={24} color={colors.primary} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -512,18 +460,18 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0f172a',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
     marginTop: 12,
   },
   keyboardView: {
@@ -543,12 +491,12 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
     borderWidth: 2,
-    borderColor: 'rgba(102, 126, 234, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   title: {
     fontSize: 32,
@@ -558,15 +506,20 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: 'rgba(255, 255, 255, 0.7)',
     marginTop: 8,
   },
   formContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.95)',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0 : 0.1,
+    shadowRadius: 12,
+    elevation: isDark ? 0 : 5,
   },
   row: {
     flexDirection: 'row',
@@ -576,11 +529,11 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.inputBackground,
     borderRadius: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: colors.inputBorder,
   },
   inputIcon: {
     paddingLeft: 14,
@@ -591,28 +544,28 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingRight: 14,
     fontSize: 15,
-    color: '#fff',
+    color: colors.inputText,
   },
   inputSmall: {
     paddingLeft: 14,
   },
   inputError: {
-    borderColor: '#ef4444',
+    borderColor: colors.error,
   },
   pickerButton: {
     paddingRight: 14,
   },
   pickerText: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
   },
   errorText: {
-    color: '#ef4444',
+    color: colors.error,
     fontSize: 12,
     marginBottom: 8,
     marginLeft: 8,
   },
   yearLabel: {
-    color: '#94a3b8',
+    color: colors.textSecondary,
     fontSize: 14,
     marginRight: 12,
   },
@@ -620,16 +573,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.inputBackground,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
   },
   yearButtonActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   yearButtonText: {
-    color: '#64748b',
+    color: colors.textTertiary,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -660,52 +616,31 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   switchText: {
-    color: '#667eea',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
-  },
-  adminLink: {
-    color: '#94a3b8',
-  },
-  adminWarning: {
-    alignItems: 'center',
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-    borderRadius: 12,
-  },
-  adminWarningText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  adminWarningSubtext: {
-    color: '#64748b',
-    fontSize: 12,
-    marginTop: 4,
   },
   footer: {
     alignItems: 'center',
     marginTop: 32,
   },
   footerText: {
-    color: '#64748b',
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 14,
   },
   versionText: {
-    color: '#475569',
+    color: 'rgba(255, 255, 255, 0.4)',
     fontSize: 12,
     marginTop: 4,
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.backgroundSecondary,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '70%',
@@ -716,12 +651,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    borderBottomColor: colors.divider,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: colors.text,
   },
   modalList: {
     padding: 16,
@@ -731,23 +666,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   modalItemActive: {
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(102, 126, 234, 0.3)',
+    backgroundColor: colors.primary + '15',
+    borderColor: colors.primary + '40',
   },
   modalItemText: {
     fontSize: 15,
-    color: '#fff',
+    color: colors.text,
     fontWeight: '500',
   },
   modalItemSubtext: {
     fontSize: 12,
-    color: '#64748b',
+    color: colors.textTertiary,
     marginTop: 2,
   },
 });
