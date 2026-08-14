@@ -1,50 +1,20 @@
-# Welcome to your Expo app 👋
-kadir
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# 🎓 Kampüs Rehberi Mobil Uygulaması
 
-## Get started
+Öğrencilerin kampüs içi yaşantısını kolaylaştırmak ve gerekli bilgilere tek noktadan ulaşmalarını sağlamak amacıyla geliştirilmiş mobil rehber uygulaması.
 
-1. Install dependencies
+## 🚀 Öne Çıkan Özellikler
+*   **Hızlı Erişim:** İhtiyaç duyulan kampüs bilgilerine anında ulaşım imkanı.
+*   **Kullanıcı Dostu Arayüz:** Akıcı ve modern mobil deneyim.
+*   *(Buraya uygulamanın 1-2 spesifik özelliğini daha ekleyebilirsin, örn: Yemekhane menüsü, ring saatleri vb.)*
 
-   ```bash
-   npm install
-   ```
+## 🛠 Kullanılan Teknolojiler
+*   **Frontend:** React Native, Expo Go
+*   **Geliştirme Ortamı:** Node.js
 
-2. Start the app
 
-   ```bash
-   npx expo start
-   ```
+## 📦 Kurulum ve Çalıştırma (Local Development)
+Projeyi kendi bilgisayarınızda çalıştırıp test etmek için aşağıdaki adımları izleyebilirsiniz:
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Repoyu bilgisayarınıza klonlayın:
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+git clone [https://github.com/ikuzunlu/kampus-rehberi-app.git](https://github.com/ikuzunlu/kampus-rehberi-app.git)
