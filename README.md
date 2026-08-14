@@ -16,6 +16,7 @@
 Projeyi kendi bilgisayarınızda çalıştırıp test etmek için aşağıdaki adımları izleyebilirsiniz:
 
 
-1. Repoyu bilgisayarınıza klonlayın:
-```bash
-git clone [https://github.com/ikuzunlu/kampus-rehberi-app.git](https://github.com/ikuzunlu/kampus-rehberi-app.git)
+## 👥 Geliştirici Ekip
+Bu uygulama, harika bir takım çalışmasının ürünü olarak geliştirilmiştir:
+*   **İbrahim Kadir Uzunlu** - [ikuzunlu](https://github.com/ikuzunlu)
+*   **Zeynep Metin** - [zeynepmetn](https://github.com/zeynepmetn)
