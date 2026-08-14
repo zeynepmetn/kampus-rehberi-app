@@ -5,7 +5,7 @@
 ## 🚀 Öne Çıkan Özellikler
 *   **Hızlı Erişim:** İhtiyaç duyulan kampüs bilgilerine anında ulaşım imkanı.
 *   **Kullanıcı Dostu Arayüz:** Akıcı ve modern mobil deneyim.
-*   *(Buraya uygulamanın 1-2 spesifik özelliğini daha ekleyebilirsin, örn: Yemekhane menüsü, ring saatleri vb.)*
+
 
 ## 🛠 Kullanılan Teknolojiler
 *   **Frontend:** React Native, Expo Go
@@ -14,6 +14,7 @@
 
 ## 📦 Kurulum ve Çalıştırma (Local Development)
 Projeyi kendi bilgisayarınızda çalıştırıp test etmek için aşağıdaki adımları izleyebilirsiniz:
+
 
 1. Repoyu bilgisayarınıza klonlayın:
 ```bash
